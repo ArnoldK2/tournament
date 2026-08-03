@@ -1,0 +1,282 @@
+import { create } from 'zustand'
+import { supabase } from '../lib/supabase'
+import type {
+  Client, TournamentEvent, Team, Edition, Game,
+  StandardResult, PointsResult, ParticipantResult,
+  CumulativeRound, BracketMatch, User,
+} from '../types'
+
+interface AppState {
+  clients: Client[]
+  events: TournamentEvent[]
+  teams: Team[]
+  editions: Edition[]
+  games: Game[]
+  standardResults: StandardResult[]
+  pointsResults: PointsResult[]
+  participantResults: ParticipantResult[]
+  cumulativeRounds: CumulativeRound[]
+  bracketMatches: BracketMatch[]
+  users: User[]
+
+  loaded: boolean
+  loadData: () => Promise<void>
+
+  currentUserId: string | null
+  currentClientId: string | null
+  currentRole: 'guest' | 'client_admin' | 'data_collector' | 'super_admin'
+
+  login: (username: string, pin: string) => Promise<boolean>
+  logout: () => void
+  currentUser: () => User | null
+
+  addClient: (data: Omit<Client, 'id'>) => Promise<void>
+  updateClient: (id: string, data: Partial<Client>) => Promise<void>
+
+  addEvent: (data: Omit<TournamentEvent, 'id'>) => Promise<void>
+  updateEvent: (id: string, data: Partial<TournamentEvent>) => Promise<void>
+
+  addTeam: (data: Omit<Team, 'id'>) => Promise<void>
+  updateTeam: (id: string, data: Partial<Team>) => Promise<void>
+  deleteTeam: (id: string) => Promise<void>
+
+  addEdition: (data: Omit<Edition, 'id'>) => Promise<void>
+  updateEdition: (id: string, data: Partial<Edition>) => Promise<void>
+
+  addGame: (data: Omit<Game, 'id'>) => Promise<void>
+  updateGame: (id: string, data: Partial<Game>) => Promise<void>
+  deleteGame: (id: string) => Promise<void>
+  copyGamesToEdition: (fromEditionId: string, toEditionId: string) => Promise<void>
+
+  saveStandardResults: (gameId: string, results: { team_id: string; position: number }[]) => Promise<void>
+  savePointsResults: (gameId: string, results: { team_id: string; raw_score: number }[]) => Promise<void>
+  saveParticipantResults: (gameId: string, results: { team_id: string; participant_name: string; position: number }[]) => Promise<void>
+  addCumulativeRound: (gameId: string, scores: { team_id: string; score: number }[]) => Promise<void>
+  saveBracketMatch: (match: Omit<BracketMatch, 'id'>) => Promise<void>
+  updateBracketMatch: (id: string, data: Partial<BracketMatch>) => Promise<void>
+
+  addUser: (data: Omit<User, 'id'>) => Promise<void>
+  updateUser: (id: string, data: Partial<User>) => Promise<void>
+  deleteUser: (id: string) => Promise<void>
+}
+
+export const useStore = create<AppState>((set, get) => ({
+  clients: [],
+  events: [],
+  teams: [],
+  editions: [],
+  games: [],
+  standardResults: [],
+  pointsResults: [],
+  participantResults: [],
+  cumulativeRounds: [],
+  bracketMatches: [],
+  users: [],
+
+  loaded: false,
+
+  loadData: async () => {
+    const [
+      { data: clients },
+      { data: events },
+      { data: teams },
+      { data: editions },
+      { data: games },
+      { data: standardResults },
+      { data: pointsResults },
+      { data: participantResults },
+      { data: cumulativeRounds },
+      { data: bracketMatches },
+      { data: users },
+    ] = await Promise.all([
+      supabase.from('clients').select('*'),
+      supabase.from('events').select('*'),
+      supabase.from('teams').select('*'),
+      supabase.from('editions').select('*'),
+      supabase.from('games').select('*').order('order'),
+      supabase.from('standard_results').select('*'),
+      supabase.from('points_results').select('*'),
+      supabase.from('participant_results').select('*'),
+      supabase.from('cumulative_rounds').select('*').order('round_number'),
+      supabase.from('bracket_matches').select('*'),
+      supabase.from('users').select('*'),
+    ])
+
+    set({
+      clients: (clients ?? []).map(r => ({ id: r.id, name: r.name, slug: r.slug, logo_color: r.logo_color })),
+      events: (events ?? []).map(r => ({ id: r.id, client_id: r.client_id, name: r.name, description: r.description })),
+      teams: (teams ?? []).map(r => ({ id: r.id, client_id: r.client_id, name: r.name, color: r.color })),
+      editions: (editions ?? []).map(r => ({ id: r.id, event_id: r.event_id, label: r.label, date: r.date, status: r.status })),
+      games: (games ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order })),
+      standardResults: (standardResults ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, position: r.position })),
+      pointsResults: (pointsResults ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, raw_score: r.raw_score })),
+      participantResults: (participantResults ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, participant_name: r.participant_name, position: r.position })),
+      cumulativeRounds: (cumulativeRounds ?? []).map(r => ({ id: r.id, game_id: r.game_id, round_number: r.round_number, scores: r.scores })),
+      bracketMatches: (bracketMatches ?? []).map(r => ({ id: r.id, game_id: r.game_id, round: r.round, match_number: r.match_number, team_a_id: r.team_a_id, team_b_id: r.team_b_id, score_a: r.score_a, score_b: r.score_b, winner_id: r.winner_id, loser_bracket: r.loser_bracket })),
+      users: (users ?? []).map(r => ({ id: r.id, client_id: r.client_id, username: r.username, pin: r.pin, role: r.role, display_name: r.display_name })),
+      loaded: true,
+    })
+  },
+
+  currentUserId: null,
+  currentClientId: null,
+  currentRole: 'guest',
+
+  login: async (username, pin) => {
+    const { data } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .eq('pin', pin)
+      .single()
+    if (!data) return false
+    set({ currentUserId: data.id, currentClientId: data.client_id, currentRole: data.role })
+    return true
+  },
+
+  logout: () => set({ currentUserId: null, currentClientId: null, currentRole: 'guest' }),
+
+  currentUser: () => {
+    const { currentUserId, users } = get()
+    return users.find(u => u.id === currentUserId) ?? null
+  },
+
+  addClient: async (data) => {
+    const { data: row } = await supabase.from('clients').insert(data).select().single()
+    if (row) set(s => ({ clients: [...s.clients, { id: row.id, name: row.name, slug: row.slug, logo_color: row.logo_color }] }))
+  },
+
+  updateClient: async (id, data) => {
+    await supabase.from('clients').update(data).eq('id', id)
+    set(s => ({ clients: s.clients.map(c => c.id === id ? { ...c, ...data } : c) }))
+  },
+
+  addEvent: async (data) => {
+    const { data: row } = await supabase.from('events').insert(data).select().single()
+    if (row) set(s => ({ events: [...s.events, { id: row.id, client_id: row.client_id, name: row.name, description: row.description }] }))
+  },
+
+  updateEvent: async (id, data) => {
+    await supabase.from('events').update(data).eq('id', id)
+    set(s => ({ events: s.events.map(e => e.id === id ? { ...e, ...data } : e) }))
+  },
+
+  addTeam: async (data) => {
+    const { data: row } = await supabase.from('teams').insert(data).select().single()
+    if (row) set(s => ({ teams: [...s.teams, { id: row.id, client_id: row.client_id, name: row.name, color: row.color }] }))
+  },
+
+  updateTeam: async (id, data) => {
+    await supabase.from('teams').update(data).eq('id', id)
+    set(s => ({ teams: s.teams.map(t => t.id === id ? { ...t, ...data } : t) }))
+  },
+
+  deleteTeam: async (id) => {
+    await supabase.from('teams').delete().eq('id', id)
+    set(s => ({ teams: s.teams.filter(t => t.id !== id) }))
+  },
+
+  addEdition: async (data) => {
+    const { data: row } = await supabase.from('editions').insert(data).select().single()
+    if (row) set(s => ({ editions: [...s.editions, { id: row.id, event_id: row.event_id, label: row.label, date: row.date, status: row.status }] }))
+  },
+
+  updateEdition: async (id, data) => {
+    await supabase.from('editions').update(data).eq('id', id)
+    set(s => ({ editions: s.editions.map(e => e.id === id ? { ...e, ...data } : e) }))
+  },
+
+  addGame: async (data) => {
+    const { data: row } = await supabase.from('games').insert(data).select().single()
+    if (row) set(s => ({ games: [...s.games, { id: row.id, edition_id: row.edition_id, name: row.name, type: row.type, scoring_direction: row.scoring_direction, weight: row.weight, status: row.status, order: row.order }] }))
+  },
+
+  updateGame: async (id, data) => {
+    await supabase.from('games').update(data).eq('id', id)
+    set(s => ({ games: s.games.map(g => g.id === id ? { ...g, ...data } : g) }))
+  },
+
+  deleteGame: async (id) => {
+    await supabase.from('games').delete().eq('id', id)
+    set(s => ({ games: s.games.filter(g => g.id !== id) }))
+  },
+
+  copyGamesToEdition: async (fromEditionId, toEditionId) => {
+    const source = get().games.filter(g => g.edition_id === fromEditionId)
+    const existing = get().games.filter(g => g.edition_id === toEditionId)
+    const newGames = source
+      .filter(g => !existing.some(e => e.name === g.name))
+      .map(g => ({ edition_id: toEditionId, name: g.name, type: g.type, scoring_direction: g.scoring_direction, weight: g.weight, status: 'pending' as const, order: g.order }))
+    if (newGames.length === 0) return
+    const { data: rows } = await supabase.from('games').insert(newGames).select()
+    if (rows) set(s => ({ games: [...s.games, ...rows.map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order }))] }))
+  },
+
+  saveStandardResults: async (gameId, results) => {
+    await supabase.from('standard_results').delete().eq('game_id', gameId)
+    const rows = results.map(r => ({ game_id: gameId, team_id: r.team_id, position: r.position }))
+    const { data } = await supabase.from('standard_results').insert(rows).select()
+    set(s => ({
+      standardResults: [
+        ...s.standardResults.filter(r => r.game_id !== gameId),
+        ...(data ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, position: r.position })),
+      ],
+    }))
+  },
+
+  savePointsResults: async (gameId, results) => {
+    await supabase.from('points_results').delete().eq('game_id', gameId)
+    const rows = results.map(r => ({ game_id: gameId, team_id: r.team_id, raw_score: r.raw_score }))
+    const { data } = await supabase.from('points_results').insert(rows).select()
+    set(s => ({
+      pointsResults: [
+        ...s.pointsResults.filter(r => r.game_id !== gameId),
+        ...(data ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, raw_score: r.raw_score })),
+      ],
+    }))
+  },
+
+  saveParticipantResults: async (gameId, results) => {
+    await supabase.from('participant_results').delete().eq('game_id', gameId)
+    const rows = results.map(r => ({ game_id: gameId, team_id: r.team_id, participant_name: r.participant_name, position: r.position }))
+    const { data } = await supabase.from('participant_results').insert(rows).select()
+    set(s => ({
+      participantResults: [
+        ...s.participantResults.filter(r => r.game_id !== gameId),
+        ...(data ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, participant_name: r.participant_name, position: r.position })),
+      ],
+    }))
+  },
+
+  addCumulativeRound: async (gameId, scores) => {
+    const existing = get().cumulativeRounds.filter(r => r.game_id === gameId)
+    const roundNumber = existing.length + 1
+    const { data: row } = await supabase.from('cumulative_rounds').insert({ game_id: gameId, round_number: roundNumber, scores }).select().single()
+    if (row) set(s => ({ cumulativeRounds: [...s.cumulativeRounds, { id: row.id, game_id: row.game_id, round_number: row.round_number, scores: row.scores }] }))
+  },
+
+  saveBracketMatch: async (match) => {
+    const { data: row } = await supabase.from('bracket_matches').insert(match).select().single()
+    if (row) set(s => ({ bracketMatches: [...s.bracketMatches, { id: row.id, game_id: row.game_id, round: row.round, match_number: row.match_number, team_a_id: row.team_a_id, team_b_id: row.team_b_id, score_a: row.score_a, score_b: row.score_b, winner_id: row.winner_id, loser_bracket: row.loser_bracket }] }))
+  },
+
+  updateBracketMatch: async (id, data) => {
+    await supabase.from('bracket_matches').update(data).eq('id', id)
+    set(s => ({ bracketMatches: s.bracketMatches.map(m => m.id === id ? { ...m, ...data } : m) }))
+  },
+
+  addUser: async (data) => {
+    const { data: row } = await supabase.from('users').insert(data).select().single()
+    if (row) set(s => ({ users: [...s.users, { id: row.id, client_id: row.client_id, username: row.username, pin: row.pin, role: row.role, display_name: row.display_name }] }))
+  },
+
+  updateUser: async (id, data) => {
+    await supabase.from('users').update(data).eq('id', id)
+    set(s => ({ users: s.users.map(u => u.id === id ? { ...u, ...data } : u) }))
+  },
+
+  deleteUser: async (id) => {
+    await supabase.from('users').delete().eq('id', id)
+    set(s => ({ users: s.users.filter(u => u.id !== id) }))
+  },
+}))

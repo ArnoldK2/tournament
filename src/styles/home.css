@@ -1,0 +1,96 @@
+.home-root {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 0%, #1a1040 0%, #0a0a14 70%);
+  padding: 4rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.home-title {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #f9e84e, #f97316, #e040fb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.home-sub {
+  color: rgba(255,255,255,0.4);
+  margin: 0.5rem 0 0;
+  font-size: 1.05rem;
+}
+
+/* ── Feature cards ────────────────────────────────────────── */
+.home-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 3rem;
+}
+
+.feature-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.feature-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.feature-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.3rem;
+}
+
+.feature-card p {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── CTA ──────────────────────────────────────────────────── */
+.home-cta {
+  text-align: center;
+}
+
+.home-login-btn {
+  padding: 0.75rem 2.5rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.3);
+}
+.home-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(124,58,237,0.45);
+}
+
+@media (max-width: 480px) {
+  .home-root { padding: 3rem 1rem; }
+  .home-features { grid-template-columns: 1fr; }
+}
