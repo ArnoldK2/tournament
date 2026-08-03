@@ -28,6 +28,7 @@ export default function ClientDashboard() {
   const [newEditionDate, setNewEditionDate] = useState('')
 
   if (!client) { navigate('/admin'); return null }
+  if (role === 'guest') { navigate('/login'); return null }
 
   function saveEvent() {
     if (!newEventName.trim()) return

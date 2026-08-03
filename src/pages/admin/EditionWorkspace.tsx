@@ -97,7 +97,7 @@ export default function EditionWorkspace() {
         </div>
         <div className="admin-header-right">
           <div className="edition-status-wrap">
-            {role === 'client_admin' ? (
+            {(role === 'client_admin' || role === 'super_admin') ? (
               <button className={`dec-status status-${edition.status} clickable`} onClick={() => setShowStatusPicker(s => !s)}>
                 {edition.status} ▾
               </button>

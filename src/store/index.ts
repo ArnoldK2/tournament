@@ -117,6 +117,14 @@ export const useStore = create<AppState>((set, get) => ({
       bracketMatches: (bracketMatches ?? []).map(r => ({ id: r.id, game_id: r.game_id, round: r.round, match_number: r.match_number, team_a_id: r.team_a_id, team_b_id: r.team_b_id, score_a: r.score_a, score_b: r.score_b, winner_id: r.winner_id, loser_bracket: r.loser_bracket })),
       users: (users ?? []).map(r => ({ id: r.id, client_id: r.client_id, username: r.username, pin: r.pin, role: r.role, display_name: r.display_name })),
       loaded: true,
+      // Restore session from localStorage if present
+      ...(() => {
+        try {
+          const saved = localStorage.getItem('tt_session')
+          if (saved) return JSON.parse(saved)
+        } catch {}
+        return {}
+      })(),
     })
   },
 
@@ -132,11 +140,16 @@ export const useStore = create<AppState>((set, get) => ({
       .eq('pin', pin)
       .single()
     if (!data) return false
-    set({ currentUserId: data.id, currentClientId: data.client_id, currentRole: data.role })
+    const session = { currentUserId: data.id, currentClientId: data.client_id, currentRole: data.role }
+    localStorage.setItem('tt_session', JSON.stringify(session))
+    set(session)
     return true
   },
 
-  logout: () => set({ currentUserId: null, currentClientId: null, currentRole: 'guest' }),
+  logout: () => {
+    localStorage.removeItem('tt_session')
+    set({ currentUserId: null, currentClientId: null, currentRole: 'guest' })
+  },
 
   currentUser: () => {
     const { currentUserId, users } = get()
