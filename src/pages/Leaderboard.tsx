@@ -39,18 +39,18 @@ function RankDelta({ curr, prev }: { curr: number; prev?: number }) {
   )
 }
 
-function UpdateFlash({ show }: { show: boolean }) {
+function UpdateFlash({ message }: { message: string | null }) {
   return (
     <AnimatePresence>
-      {show && (
+      {message && (
         <motion.div
           className="update-flash"
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.35 }}
+          initial={{ opacity: 0, y: -16, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -16, scale: 0.95 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         >
-          ⚡ Leaderboard Updated
+          ⚡ {message}
         </motion.div>
       )}
     </AnimatePresence>
@@ -75,14 +75,14 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
 
 // ── Big Screen ─────────────────────────────────────────────────
 function BigScreenLeaderboard({
-  entries, clientName, eventName, editionLabel, editionId, flash,
+  entries, clientName, eventName, editionLabel, editionId, flashMessage,
 }: {
   entries: LeaderboardEntry[]
   clientName: string
   eventName: string
   editionLabel: string
   editionId: string
-  flash: boolean
+  flashMessage: string | null
 }) {
   const navigate = useNavigate()
   return (
@@ -91,7 +91,7 @@ function BigScreenLeaderboard({
       <div className="bs-blob bs-blob-2" />
       <div className="bs-blob bs-blob-3" />
 
-      <UpdateFlash show={flash} />
+      <UpdateFlash message={flashMessage} />
 
       <button className="bs-progression-btn" onClick={() => navigate(`/progression/${editionId}`)} title="View progression">
         📊
@@ -187,8 +187,15 @@ export default function Leaderboard() {
   )
 
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
-  const [flash, setFlash] = useState(false)
+  const [flashMessage, setFlashMessage] = useState<string | null>(null)
   const prevRef = useRef<Map<string, number>>(new Map())
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function triggerFlash(msg: string) {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+    setFlashMessage(msg)
+    flashTimerRef.current = setTimeout(() => setFlashMessage(null), 3000)
+  }
 
   useEffect(() => {
     if (!teams.length || !games.length) { setEntries([]); return }
@@ -198,25 +205,39 @@ export default function Leaderboard() {
     }).map(e => ({ ...e, prev_rank: prevRef.current.get(e.team_id) }))
     prevRef.current = new Map(next.map(e => [e.team_id, e.rank]))
     setEntries(next)
-    setFlash(true)
-    const t = setTimeout(() => setFlash(false), 2000)
-    return () => clearTimeout(t)
   }, [games, teams, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches])
 
   // Realtime subscription — refresh when any result changes in Supabase
   useEffect(() => {
     if (!editionId) return
+
+    function handleResultChange(payload: { new?: { game_id?: string } }) {
+      const gameId = payload.new?.game_id
+      const gameName = gameId
+        ? allGames.find(g => g.id === gameId)?.name
+        : null
+      refreshEditionResults(editionId!).then(() => {
+        triggerFlash(gameName ? `New results — ${gameName}` : 'Scores updated')
+      })
+    }
+
+    function handleGameChange() {
+      refreshEditionResults(editionId!).then(() => {
+        triggerFlash('Game status updated')
+      })
+    }
+
     const channel = supabase
       .channel(`edition-${editionId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'standard_results' }, () => refreshEditionResults(editionId))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'points_results' }, () => refreshEditionResults(editionId))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results' }, () => refreshEditionResults(editionId))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cumulative_rounds' }, () => refreshEditionResults(editionId))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bracket_matches' }, () => refreshEditionResults(editionId))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => refreshEditionResults(editionId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'standard_results' }, handleResultChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'points_results' }, handleResultChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results' }, handleResultChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cumulative_rounds' }, handleResultChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bracket_matches' }, handleResultChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, handleGameChange)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [editionId])
+  }, [editionId, allGames])
 
   if (!edition || !event || !client) {
     return (
@@ -235,7 +256,7 @@ export default function Leaderboard() {
         eventName={event.name}
         editionLabel={edition.label}
         editionId={editionId!}
-        flash={flash}
+        flashMessage={flashMessage}
       />
     )
   }
@@ -262,7 +283,7 @@ export default function Leaderboard() {
         <p className="lb-subtitle">{edition.label} · Live Leaderboard</p>
       </motion.header>
 
-      <UpdateFlash show={flash} />
+      <UpdateFlash message={flashMessage} />
 
       <div className="lb-list">
         {entries.map((entry, i) => {
