@@ -186,10 +186,13 @@ export default function Leaderboard() {
     [allGames, editionId]
   )
 
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [flashMessage, setFlashMessage] = useState<string | null>(null)
   const prevRef = useRef<Map<string, number>>(new Map())
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Keep a ref so the Realtime handler always sees the latest games without
+  // causing the subscription to tear down and reconnect on every refresh.
+  const allGamesRef = useRef(allGames)
+  useEffect(() => { allGamesRef.current = allGames }, [allGames])
 
   function triggerFlash(msg: string) {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
@@ -197,25 +200,27 @@ export default function Leaderboard() {
     flashTimerRef.current = setTimeout(() => setFlashMessage(null), 3000)
   }
 
-  useEffect(() => {
-    if (!teams.length || !games.length) { setEntries([]); return }
-    const next = computeLeaderboard({
+  // useMemo computes entries on the same render as the store update,
+  // avoiding the extra render cycle that useEffect+setState would cause.
+  const entries = useMemo(() => {
+    if (!teams.length || !games.length) return []
+    const computed = computeLeaderboard({
       games, teams, standardResults, pointsResults,
       participantResults, cumulativeRounds, bracketMatches,
-    }).map(e => ({ ...e, prev_rank: prevRef.current.get(e.team_id) }))
-    prevRef.current = new Map(next.map(e => [e.team_id, e.rank]))
-    setEntries(next)
+    })
+    const result = computed.map(e => ({ ...e, prev_rank: prevRef.current.get(e.team_id) }))
+    prevRef.current = new Map(computed.map(e => [e.team_id, e.rank]))
+    return result
   }, [games, teams, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches])
 
-  // Realtime subscription — refresh when any result changes in Supabase
+  // Realtime subscription — refresh when any result changes in Supabase.
+  // editionId is the only dep; allGames is read via ref to avoid reconnects.
   useEffect(() => {
     if (!editionId) return
 
     function handleResultChange(payload: { new?: { game_id?: string } }) {
       const gameId = payload.new?.game_id
-      const gameName = gameId
-        ? allGames.find(g => g.id === gameId)?.name
-        : null
+      const gameName = gameId ? allGamesRef.current.find(g => g.id === gameId)?.name : null
       refreshEditionResults(editionId!).then(() => {
         triggerFlash(gameName ? `New results — ${gameName}` : 'Scores updated')
       })
@@ -237,7 +242,7 @@ export default function Leaderboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, handleGameChange)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [editionId, allGames])
+  }, [editionId])
 
   if (!edition || !event || !client) {
     return (
