@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion'
 import type { LeaderboardEntry } from '../types'
 import { useStore } from '../store'
+import { supabase } from '../lib/supabase'
 import { computeLeaderboard } from '../store/scoring'
 import '../styles/leaderboard.css'
 
@@ -174,6 +175,7 @@ export default function Leaderboard() {
   const participantResults = useStore(s => s.participantResults)
   const cumulativeRounds = useStore(s => s.cumulativeRounds)
   const bracketMatches = useStore(s => s.bracketMatches)
+  const refreshEditionResults = useStore(s => s.refreshEditionResults)
 
   const edition = useMemo(() => editions.find(e => e.id === editionId), [editions, editionId])
   const event = useMemo(() => events.find(e => e.id === edition?.event_id), [events, edition])
@@ -200,6 +202,21 @@ export default function Leaderboard() {
     const t = setTimeout(() => setFlash(false), 2000)
     return () => clearTimeout(t)
   }, [games, teams, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches])
+
+  // Realtime subscription — refresh when any result changes in Supabase
+  useEffect(() => {
+    if (!editionId) return
+    const channel = supabase
+      .channel(`edition-${editionId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'standard_results' }, () => refreshEditionResults(editionId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'points_results' }, () => refreshEditionResults(editionId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results' }, () => refreshEditionResults(editionId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cumulative_rounds' }, () => refreshEditionResults(editionId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bracket_matches' }, () => refreshEditionResults(editionId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => refreshEditionResults(editionId))
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [editionId])
 
   if (!edition || !event || !client) {
     return (

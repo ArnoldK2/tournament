@@ -58,6 +58,8 @@ interface AppState {
   addUser: (data: Omit<User, 'id'>) => Promise<void>
   updateUser: (id: string, data: Partial<User>) => Promise<void>
   deleteUser: (id: string) => Promise<void>
+
+  refreshEditionResults: (editionId: string) => Promise<void>
 }
 
 export type { AppState }
@@ -293,5 +295,55 @@ export const useStore = create<AppState>((set, get) => ({
   deleteUser: async (id) => {
     await supabase.from('users').delete().eq('id', id)
     set(s => ({ users: s.users.filter(u => u.id !== id) }))
+  },
+
+  refreshEditionResults: async (editionId) => {
+    const gameIds = get().games
+      .filter(g => g.edition_id === editionId)
+      .map(g => g.id)
+    if (gameIds.length === 0) return
+
+    const [
+      { data: sr },
+      { data: pr },
+      { data: part },
+      { data: cr },
+      { data: bm },
+      { data: gm },
+    ] = await Promise.all([
+      supabase.from('standard_results').select('*').in('game_id', gameIds),
+      supabase.from('points_results').select('*').in('game_id', gameIds),
+      supabase.from('participant_results').select('*').in('game_id', gameIds),
+      supabase.from('cumulative_rounds').select('*').in('game_id', gameIds).order('round_number'),
+      supabase.from('bracket_matches').select('*').in('game_id', gameIds),
+      supabase.from('games').select('*').in('id', gameIds).order('order'),
+    ])
+
+    set(s => ({
+      standardResults: [
+        ...s.standardResults.filter(r => !gameIds.includes(r.game_id)),
+        ...(sr ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, position: r.position })),
+      ],
+      pointsResults: [
+        ...s.pointsResults.filter(r => !gameIds.includes(r.game_id)),
+        ...(pr ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, raw_score: r.raw_score })),
+      ],
+      participantResults: [
+        ...s.participantResults.filter(r => !gameIds.includes(r.game_id)),
+        ...(part ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, participant_name: r.participant_name, position: r.position })),
+      ],
+      cumulativeRounds: [
+        ...s.cumulativeRounds.filter(r => !gameIds.includes(r.game_id)),
+        ...(cr ?? []).map(r => ({ id: r.id, game_id: r.game_id, round_number: r.round_number, scores: r.scores })),
+      ],
+      bracketMatches: [
+        ...s.bracketMatches.filter(r => !gameIds.includes(r.game_id)),
+        ...(bm ?? []).map(r => ({ id: r.id, game_id: r.game_id, round: r.round, match_number: r.match_number, team_a_id: r.team_a_id, team_b_id: r.team_b_id, score_a: r.score_a, score_b: r.score_b, winner_id: r.winner_id, loser_bracket: r.loser_bracket })),
+      ],
+      games: [
+        ...s.games.filter(g => !gameIds.includes(g.id)),
+        ...(gm ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order })),
+      ],
+    }))
   },
 }))
