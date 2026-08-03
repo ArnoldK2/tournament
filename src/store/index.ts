@@ -60,6 +60,8 @@ interface AppState {
   deleteUser: (id: string) => Promise<void>
 }
 
+export type { AppState }
+
 export const useStore = create<AppState>((set, get) => ({
   clients: [],
   events: [],

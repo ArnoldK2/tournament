@@ -7,7 +7,7 @@ import '../../styles/admin.css'
 export default function AdminLogin() {
   const navigate = useNavigate()
   const login = useStore(s => s.login)
-  const store = useStore()
+  const store = useStore(s => s)
 
   const [username, setUsername] = useState('')
   const [pin, setPin] = useState('')

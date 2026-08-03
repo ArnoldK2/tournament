@@ -162,7 +162,6 @@ function EliminationEntry({ game, teams }: Props) {
   const updateBracketMatch = useStore(s => s.updateBracketMatch)
 
   const matches = useMemo(() => allMatches.filter(m => m.game_id === game.id).sort((a, b) => a.round - b.round || a.match_number - b.match_number), [allMatches, game.id])
-  const maxRound = matches.reduce((max, m) => Math.max(max, m.round), 0)
   const [viewRound, setViewRound] = useState(1)
 
   const [scores, setScores] = useState<Record<string, { a: string; b: string }>>(() =>

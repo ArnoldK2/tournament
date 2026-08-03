@@ -85,8 +85,6 @@ export default function EditionWorkspace() {
   }
 
   const needsDirection = ['standard', 'multi_participant', 'cumulative'].includes(gameType)
-  const activeGame = games.find(g => g.id === activeGameId)
-
   return (
     <div className="admin-root">
       <header className="admin-header">

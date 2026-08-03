@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useStore } from '../store'
+import type { AppState } from '../store'
 import { computeLeaderboard } from '../store/scoring'
 import '../styles/progression.css'
 
@@ -9,7 +10,7 @@ interface Frame {
   teams: { teamId: string; teamName: string; rank: number; cumulativeScore: number }[]
 }
 
-function buildFrames(editionId: string, store: ReturnType<typeof useStore>): Frame[] {
+function buildFrames(editionId: string, store: AppState): Frame[] {
   const games = store.games
     .filter(g => g.edition_id === editionId && g.status !== 'pending')
     .sort((a, b) => a.order - b.order)
@@ -49,7 +50,7 @@ const COLORS = ['#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb923c'
 export default function Progression() {
   const { editionId } = useParams<{ editionId: string }>()
   const navigate = useNavigate()
-  const store = useStore()
+  const store = useStore(s => s)
 
   const frames = useMemo(() => buildFrames(editionId!, store), [
     editionId, store.games, store.standardResults, store.pointsResults,
