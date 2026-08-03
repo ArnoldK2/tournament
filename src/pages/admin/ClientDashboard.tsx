@@ -72,7 +72,7 @@ export default function ClientDashboard() {
         {clientEvents.length === 0 && (
           <div className="dash-empty">
             <p>No events yet.</p>
-            {role === 'client_admin' && (
+            {(role === 'client_admin' || role === 'super_admin') && (
               <button className="admin-add-btn" onClick={() => setShowEventForm(true)}>+ Create First Event</button>
             )}
           </div>
@@ -87,7 +87,7 @@ export default function ClientDashboard() {
             <div key={event.id} className="dash-event-block">
               <div className="dash-event-header">
                 <h2 className="dash-event-name">{event.name}</h2>
-                {role === 'client_admin' && (
+                {(role === 'client_admin' || role === 'super_admin') && (
                   <button className="dash-add-edition" onClick={() => { setEditionEventId(event.id); setShowEditionForm(true) }}>
                     + Edition
                   </button>
@@ -122,7 +122,7 @@ export default function ClientDashboard() {
           )
         })}
 
-        {clientEvents.length > 0 && role === 'client_admin' && (
+        {clientEvents.length > 0 && (role === 'client_admin' || role === 'super_admin') && (
           <button className="dash-new-event-btn" onClick={() => setShowEventForm(true)}>+ New Event</button>
         )}
       </div>
