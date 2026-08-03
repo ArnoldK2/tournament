@@ -113,7 +113,7 @@ export default function Register() {
             <p className="aud-share-hint">Share this link so they can register and follow along</p>
             <div className="aud-share-url">{shareUrl}</div>
             <button className="aud-share-btn" onClick={handleShare}>
-              {copied ? '✓ Copied!' : (navigator.share ? '↑ Share Link' : '⎘ Copy Link')}
+              {copied ? '✓ Copied!' : ('share' in navigator ? '↑ Share Link' : '⎘ Copy Link')}
             </button>
           </div>
 
