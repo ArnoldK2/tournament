@@ -83,7 +83,7 @@ create table if not exists participant_results (
   id uuid primary key default gen_random_uuid(),
   game_id uuid not null references games(id) on delete cascade,
   team_id uuid not null references teams(id) on delete cascade,
-  participant_name text not null,
+  participant_name text not null default '',
   position integer not null
 );
 
@@ -108,6 +108,19 @@ create table if not exists bracket_matches (
   winner_id uuid references teams(id),
   loser_bracket boolean not null default false
 );
+
+-- ── Audit Log ───────────────────────────────────────────────
+create table if not exists audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete set null,
+  display_name text not null,
+  action text not null,
+  game_id uuid references games(id) on delete set null,
+  game_name text,
+  details jsonb,
+  created_at timestamptz default now()
+);
+alter table audit_logs disable row level security;
 
 -- ── FK: users.client_id → clients ──────────────────────────
 alter table users add constraint users_client_id_fkey

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
 import type { Game } from '../../types'
 import BracketEntry from './BracketEntry'
@@ -8,6 +9,65 @@ import '../../styles/workspace.css'
 interface Props {
   game: Game
   clientId: string
+}
+
+// ── PIN Confirmation Modal ────────────────────────────────────
+function PinConfirmModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  const currentUser = useStore(s => s.currentUser)
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function submit() {
+    const user = currentUser()
+    if (!user || pin !== user.pin) {
+      setError('Incorrect PIN')
+      setPin('')
+      inputRef.current?.focus()
+      return
+    }
+    onConfirm()
+  }
+
+  return (
+    <motion.div
+      className="admin-modal-overlay"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onCancel}
+    >
+      <motion.div
+        className="admin-modal"
+        style={{ maxWidth: 320 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 className="modal-title">Confirm Save</h2>
+        <p style={{ fontSize: '0.85rem', color: 'var(--admin-sub)', margin: 0 }}>
+          Re-enter your PIN to save these results.
+        </p>
+        <label className="modal-label">Your PIN</label>
+        <input
+          ref={inputRef}
+          className="modal-input"
+          type="password"
+          inputMode="numeric"
+          placeholder="PIN"
+          value={pin}
+          onChange={e => { setPin(e.target.value); setError('') }}
+          onKeyDown={e => e.key === 'Enter' && submit()}
+          autoFocus
+        />
+        {error && <p style={{ color: '#f87171', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
+        <div className="modal-actions">
+          <button className="modal-btn secondary" onClick={onCancel}>Cancel</button>
+          <button className="modal-btn primary" onClick={submit} disabled={!pin}>Confirm</button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
 }
 
 export default function ResultsEntry({ game, clientId }: Props) {
@@ -20,28 +80,25 @@ export default function ResultsEntry({ game, clientId }: Props) {
   const savePointsResults = useStore(s => s.savePointsResults)
   const saveParticipantResults = useStore(s => s.saveParticipantResults)
   const addCumulativeRound = useStore(s => s.addCumulativeRound)
+  const logAudit = useStore(s => s.logAudit)
 
   const teams = useMemo(() => allTeams.filter(t => t.client_id === clientId), [allTeams, clientId])
 
-  // Standard results state
   const [positions, setPositions] = useState<Record<string, string>>(() => {
     const existing = standardResults.filter(r => r.game_id === game.id)
     return Object.fromEntries(teams.map(t => [t.id, existing.find(r => r.team_id === t.id)?.position?.toString() ?? '']))
   })
 
-  // Points results state
   const [scores, setScores] = useState<Record<string, string>>(() => {
     const existing = pointsResults.filter(r => r.game_id === game.id)
     return Object.fromEntries(teams.map(t => [t.id, existing.find(r => r.team_id === t.id)?.raw_score?.toString() ?? '']))
   })
 
-  // Cumulative round state
   const [roundScores, setRoundScores] = useState<Record<string, string>>(
     Object.fromEntries(teams.map(t => [t.id, '']))
   )
   const rounds = cumulativeRounds.filter(r => r.game_id === game.id).sort((a, b) => a.round_number - b.round_number)
 
-  // Multi-participant state
   const [participants, setParticipants] = useState<Record<string, { name: string; position: string }[]>>(() => {
     const existing = participantResults.filter(r => r.game_id === game.id)
     const byTeam: Record<string, { name: string; position: string }[]> = {}
@@ -55,11 +112,28 @@ export default function ResultsEntry({ game, clientId }: Props) {
   })
 
   const [saved, setSaved] = useState(false)
-  function flash() { setSaved(true); setTimeout(() => setSaved(false), 1500) }
+  const [showPin, setShowPin] = useState(false)
+  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null)
+
+  function flash() { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+
+  function requestSave(action: () => Promise<void>) {
+    setPendingAction(() => action)
+    setShowPin(true)
+  }
+
+  async function onPinConfirmed() {
+    setShowPin(false)
+    if (pendingAction) await pendingAction()
+    setPendingAction(null)
+    flash()
+  }
 
   // ── Standard ──────────────────────────────────────────────
   if (game.type === 'standard') {
-    const dirLabel = game.scoring_direction === 'lower_is_better' ? '1 = winner (e.g. 1st to finish)' : '1 = eliminated first (e.g. last standing wins)'
+    const dirLabel = game.scoring_direction === 'lower_is_better'
+      ? '1 = winner (e.g. 1st to finish)'
+      : '1 = eliminated first (e.g. last standing wins)'
     return (
       <div className="results-entry">
         <p className="re-hint">{dirLabel}</p>
@@ -67,23 +141,19 @@ export default function ResultsEntry({ game, clientId }: Props) {
           <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
             <span className="re-dot" />
             <span className="re-name">{team.name}</span>
-            <input
-              className="re-input"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              placeholder="Pos"
+            <input className="re-input" type="number" inputMode="numeric" min={1} placeholder="Pos"
               value={positions[team.id] ?? ''}
-              onChange={e => setPositions(p => ({ ...p, [team.id]: e.target.value }))}
-            />
+              onChange={e => setPositions(p => ({ ...p, [team.id]: e.target.value }))} />
           </div>
         ))}
-        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => {
-          saveStandardResults(game.id, teams.filter(t => positions[t.id]).map(t => ({ team_id: t.id, position: parseInt(positions[t.id]) })))
-          flash()
-        }}>
+        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
+          const results = teams.filter(t => positions[t.id]).map(t => ({ team_id: t.id, position: parseInt(positions[t.id]) }))
+          await saveStandardResults(game.id, results)
+          await logAudit('save_results', game.id, game.name, { type: 'standard', team_count: results.length })
+        })}>
           {saved ? '✓ Saved' : 'Save Results'}
         </button>
+        <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
     )
   }
@@ -97,23 +167,19 @@ export default function ResultsEntry({ game, clientId }: Props) {
           <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
             <span className="re-dot" />
             <span className="re-name">{team.name}</span>
-            <input
-              className="re-input"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              placeholder="Pts"
+            <input className="re-input" type="number" inputMode="numeric" min={0} placeholder="Pts"
               value={scores[team.id] ?? ''}
-              onChange={e => setScores(p => ({ ...p, [team.id]: e.target.value }))}
-            />
+              onChange={e => setScores(p => ({ ...p, [team.id]: e.target.value }))} />
           </div>
         ))}
-        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => {
-          savePointsResults(game.id, teams.filter(t => scores[t.id]).map(t => ({ team_id: t.id, raw_score: parseFloat(scores[t.id]) })))
-          flash()
-        }}>
+        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
+          const results = teams.filter(t => scores[t.id]).map(t => ({ team_id: t.id, raw_score: parseFloat(scores[t.id]) }))
+          await savePointsResults(game.id, results)
+          await logAudit('save_results', game.id, game.name, { type: 'points', team_count: results.length })
+        })}>
           {saved ? '✓ Saved' : 'Save Results'}
         </button>
+        <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
     )
   }
@@ -142,31 +208,29 @@ export default function ResultsEntry({ game, clientId }: Props) {
           <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
             <span className="re-dot" />
             <span className="re-name">{team.name}</span>
-            <input
-              className="re-input"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              placeholder="Score"
+            <input className="re-input" type="number" inputMode="numeric" min={0} placeholder="Score"
               value={roundScores[team.id] ?? ''}
-              onChange={e => setRoundScores(p => ({ ...p, [team.id]: e.target.value }))}
-            />
+              onChange={e => setRoundScores(p => ({ ...p, [team.id]: e.target.value }))} />
           </div>
         ))}
-        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => {
-          addCumulativeRound(game.id, teams.filter(t => roundScores[t.id]).map(t => ({ team_id: t.id, score: parseFloat(roundScores[t.id]) })))
+        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
+          const results = teams.filter(t => roundScores[t.id]).map(t => ({ team_id: t.id, score: parseFloat(roundScores[t.id]) }))
+          await addCumulativeRound(game.id, results)
+          await logAudit('add_round', game.id, game.name, { round: rounds.length + 1, team_count: results.length })
           setRoundScores(Object.fromEntries(teams.map(t => [t.id, ''])))
-          flash()
-        }}>
+        })}>
           {saved ? '✓ Round Added' : `Add Round ${rounds.length + 1}`}
         </button>
+        <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
     )
   }
 
   // ── Multi-participant ─────────────────────────────────────
   if (game.type === 'multi_participant') {
-    const dirLabel = game.scoring_direction === 'lower_is_better' ? 'Lower position = better' : 'Higher position = better'
+    const dirLabel = game.scoring_direction === 'lower_is_better'
+      ? 'Lower position = better'
+      : 'Higher position = better'
     return (
       <div className="results-entry">
         <p className="re-hint">{dirLabel} · Enter each participant and their finishing position</p>
@@ -175,27 +239,38 @@ export default function ResultsEntry({ game, clientId }: Props) {
             <div className="re-mp-header">
               <span className="re-dot" />
               <span className="re-name">{team.name}</span>
-              <button className="re-add-p" onClick={() => setParticipants(p => ({ ...p, [team.id]: [...(p[team.id] ?? []), { name: '', position: '' }] }))}>+ Person</button>
+              <button className="re-add-p" onClick={() =>
+                setParticipants(p => ({ ...p, [team.id]: [...(p[team.id] ?? []), { name: '', position: '' }] }))
+              }>+ Person</button>
             </div>
             {(participants[team.id] ?? []).map((row, i) => (
               <div key={i} className="re-mp-row">
-                <input className="re-input flex" placeholder="Name" value={row.name} onChange={e => setParticipants(p => ({ ...p, [team.id]: p[team.id].map((r, j) => j === i ? { ...r, name: e.target.value } : r) }))} />
-                <input className="re-input sm" type="number" inputMode="numeric" placeholder="Pos" value={row.position} onChange={e => setParticipants(p => ({ ...p, [team.id]: p[team.id].map((r, j) => j === i ? { ...r, position: e.target.value } : r) }))} />
+                <input className="re-input flex" placeholder="Name (optional)"
+                  value={row.name}
+                  onChange={e => setParticipants(p => ({ ...p, [team.id]: p[team.id].map((r, j) => j === i ? { ...r, name: e.target.value } : r) }))} />
+                <input className="re-input sm" type="number" inputMode="numeric" placeholder="Pos"
+                  value={row.position}
+                  onChange={e => setParticipants(p => ({ ...p, [team.id]: p[team.id].map((r, j) => j === i ? { ...r, position: e.target.value } : r) }))} />
               </div>
             ))}
           </div>
         ))}
-        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => {
-          const results = teams.flatMap(t => (participants[t.id] ?? []).filter(r => r.name && r.position).map(r => ({ team_id: t.id, participant_name: r.name, position: parseInt(r.position) })))
-          saveParticipantResults(game.id, results)
-          flash()
-        }}>
+        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
+          // Name is optional — only require position
+          const results = teams.flatMap(t =>
+            (participants[t.id] ?? [])
+              .filter(r => r.position)
+              .map(r => ({ team_id: t.id, participant_name: r.name.trim(), position: parseInt(r.position) }))
+          )
+          await saveParticipantResults(game.id, results)
+          await logAudit('save_results', game.id, game.name, { type: 'multi_participant', participant_count: results.length })
+        })}>
           {saved ? '✓ Saved' : 'Save Results'}
         </button>
+        <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
     )
   }
 
-  // ── Brackets ──────────────────────────────────────────────
   return <BracketEntry game={game} teams={teams} />
 }

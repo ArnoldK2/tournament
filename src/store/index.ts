@@ -60,6 +60,7 @@ interface AppState {
   deleteUser: (id: string) => Promise<void>
 
   refreshEditionResults: (editionId: string) => Promise<void>
+  logAudit: (action: string, gameId: string, gameName: string, details?: object) => Promise<void>
 }
 
 export type { AppState }
@@ -345,5 +346,18 @@ export const useStore = create<AppState>((set, get) => ({
         ...(gm ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order })),
       ],
     }))
+  },
+
+  logAudit: async (action, gameId, gameName, details) => {
+    const { currentUserId, users } = get()
+    const user = users.find(u => u.id === currentUserId)
+    await supabase.from('audit_logs').insert({
+      user_id: currentUserId,
+      display_name: user?.display_name ?? 'Unknown',
+      action,
+      game_id: gameId,
+      game_name: gameName,
+      details: details ?? null,
+    })
   },
 }))
