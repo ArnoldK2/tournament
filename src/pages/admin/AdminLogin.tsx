@@ -11,25 +11,32 @@ export default function AdminLogin() {
 
   const [username, setUsername] = useState('')
   const [pin, setPin] = useState('')
+  const [showPin, setShowPin] = useState(false)
   const [error, setError] = useState('')
   const [shake, setShake] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!username.trim() || !pin.trim()) return
+    if (!username.trim() || !pin.trim() || loading) return
+    setLoading(true)
+    setError('')
+
     const ok = await login(username.trim(), pin.trim())
     if (!ok) {
       setError('Invalid username or PIN')
       setPin('')
       setShake(true)
       setTimeout(() => setShake(false), 500)
+      setLoading(false)
       return
     }
+
     const user = store.users.find(u => u.username === username.trim())
     if (!user) {
       await store.loadData()
       const refreshed = store.users.find(u => u.username === username.trim())
-      if (!refreshed) return
+      if (!refreshed) { setLoading(false); return }
       routeUser(refreshed)
       return
     }
@@ -77,29 +84,42 @@ export default function AdminLogin() {
           onChange={e => { setUsername(e.target.value); setError('') }}
           placeholder="Username or phone number"
           autoFocus
+          disabled={loading}
         />
 
         <label className="al-field-label">PIN</label>
-        <motion.input
-          className="al-field-input"
-          type="password"
-          inputMode="numeric"
-          autoComplete="current-password"
-          value={pin}
-          onChange={e => { setPin(e.target.value); setError('') }}
-          placeholder="PIN"
-          animate={shake ? { x: [0, -8, 8, -8, 8, 0] } : {}}
-          transition={{ duration: 0.4 }}
-        />
+        <div className="al-pin-wrap">
+          <motion.input
+            className="al-field-input al-pin-input"
+            type={showPin ? 'text' : 'password'}
+            inputMode="numeric"
+            autoComplete="current-password"
+            value={pin}
+            onChange={e => { setPin(e.target.value); setError('') }}
+            placeholder="PIN"
+            animate={shake ? { x: [0, -8, 8, -8, 8, 0] } : {}}
+            transition={{ duration: 0.4 }}
+            disabled={loading}
+          />
+          <button
+            type="button"
+            className="al-eye-btn"
+            onClick={() => setShowPin(v => !v)}
+            tabIndex={-1}
+            aria-label={showPin ? 'Hide PIN' : 'Show PIN'}
+          >
+            {showPin ? '🙈' : '👁️'}
+          </button>
+        </div>
 
         {error && <p className="al-error">{error}</p>}
 
         <button
           type="submit"
           className="al-submit"
-          disabled={!username.trim() || !pin.trim()}
+          disabled={!username.trim() || !pin.trim() || loading}
         >
-          Log In →
+          {loading ? 'Logging in…' : 'Log In →'}
         </button>
       </motion.form>
     </div>

@@ -615,6 +615,33 @@
 }
 .al-field-input:focus { border-color: var(--admin-accent); }
 .al-field-input::placeholder { color: rgba(255,255,255,0.2); }
+.al-field-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.al-pin-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  align-items: center;
+}
+.al-pin-wrap .al-pin-input {
+  max-width: 100%;
+  padding-right: 2.8rem;
+}
+.al-eye-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+.al-eye-btn:hover { opacity: 1; }
 
 /* ── Super-admin client cards ───────────────────────────── */
 .sa-client-card {

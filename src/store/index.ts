@@ -231,9 +231,9 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   saveStandardResults: async (gameId, results) => {
-    await supabase.from('standard_results').delete().eq('game_id', gameId)
     const rows = results.map(r => ({ game_id: gameId, team_id: r.team_id, position: r.position }))
-    const { data } = await supabase.from('standard_results').insert(rows).select()
+    const { data, error } = await supabase.from('standard_results').upsert(rows, { onConflict: 'game_id,team_id' }).select()
+    if (error) throw new Error(error.message)
     set(s => ({
       standardResults: [
         ...s.standardResults.filter(r => r.game_id !== gameId),
@@ -243,9 +243,9 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   savePointsResults: async (gameId, results) => {
-    await supabase.from('points_results').delete().eq('game_id', gameId)
     const rows = results.map(r => ({ game_id: gameId, team_id: r.team_id, raw_score: r.raw_score }))
-    const { data } = await supabase.from('points_results').insert(rows).select()
+    const { data, error } = await supabase.from('points_results').upsert(rows, { onConflict: 'game_id,team_id' }).select()
+    if (error) throw new Error(error.message)
     set(s => ({
       pointsResults: [
         ...s.pointsResults.filter(r => r.game_id !== gameId),
@@ -255,9 +255,11 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   saveParticipantResults: async (gameId, results) => {
-    await supabase.from('participant_results').delete().eq('game_id', gameId)
+    const { error: delErr } = await supabase.from('participant_results').delete().eq('game_id', gameId)
+    if (delErr) throw new Error(delErr.message)
     const rows = results.map(r => ({ game_id: gameId, team_id: r.team_id, participant_name: r.participant_name, position: r.position }))
-    const { data } = await supabase.from('participant_results').insert(rows).select()
+    const { data, error } = await supabase.from('participant_results').insert(rows).select()
+    if (error) throw new Error(error.message)
     set(s => ({
       participantResults: [
         ...s.participantResults.filter(r => r.game_id !== gameId),
@@ -269,7 +271,8 @@ export const useStore = create<AppState>((set, get) => ({
   addCumulativeRound: async (gameId, scores) => {
     const existing = get().cumulativeRounds.filter(r => r.game_id === gameId)
     const roundNumber = existing.length + 1
-    const { data: row } = await supabase.from('cumulative_rounds').insert({ game_id: gameId, round_number: roundNumber, scores }).select().single()
+    const { data: row, error } = await supabase.from('cumulative_rounds').insert({ game_id: gameId, round_number: roundNumber, scores }).select().single()
+    if (error) throw new Error(error.message)
     if (row) set(s => ({ cumulativeRounds: [...s.cumulativeRounds, { id: row.id, game_id: row.game_id, round_number: row.round_number, scores: row.scores }] }))
   },
 
@@ -299,10 +302,19 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   refreshEditionResults: async (editionId) => {
-    const gameIds = get().games
-      .filter(g => g.edition_id === editionId)
-      .map(g => g.id)
-    if (gameIds.length === 0) return
+    // Fetch games by edition first — deriving gameIds from the local store
+    // would make newly-created games invisible to every subsequent refresh.
+    const { data: gm } = await supabase
+      .from('games').select('*').eq('edition_id', editionId).order('order')
+    const gameIds = (gm ?? []).map(g => g.id)
+    // Games this edition used to have, so removed games get cleared from the store.
+    const staleIds = get().games.filter(g => g.edition_id === editionId).map(g => g.id)
+    const allIds = Array.from(new Set([...gameIds, ...staleIds]))
+
+    if (allIds.length === 0) {
+      set(s => ({ games: s.games.filter(g => g.edition_id !== editionId) }))
+      return
+    }
 
     const [
       { data: sr },
@@ -310,39 +322,36 @@ export const useStore = create<AppState>((set, get) => ({
       { data: part },
       { data: cr },
       { data: bm },
-      { data: gm },
     ] = await Promise.all([
       supabase.from('standard_results').select('*').in('game_id', gameIds),
       supabase.from('points_results').select('*').in('game_id', gameIds),
       supabase.from('participant_results').select('*').in('game_id', gameIds),
       supabase.from('cumulative_rounds').select('*').in('game_id', gameIds).order('round_number'),
       supabase.from('bracket_matches').select('*').in('game_id', gameIds),
-      supabase.from('games').select('*').in('id', gameIds).order('order'),
     ])
-
     set(s => ({
       standardResults: [
-        ...s.standardResults.filter(r => !gameIds.includes(r.game_id)),
+        ...s.standardResults.filter(r => !allIds.includes(r.game_id)),
         ...(sr ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, position: r.position })),
       ],
       pointsResults: [
-        ...s.pointsResults.filter(r => !gameIds.includes(r.game_id)),
+        ...s.pointsResults.filter(r => !allIds.includes(r.game_id)),
         ...(pr ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, raw_score: r.raw_score })),
       ],
       participantResults: [
-        ...s.participantResults.filter(r => !gameIds.includes(r.game_id)),
+        ...s.participantResults.filter(r => !allIds.includes(r.game_id)),
         ...(part ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, participant_name: r.participant_name, position: r.position })),
       ],
       cumulativeRounds: [
-        ...s.cumulativeRounds.filter(r => !gameIds.includes(r.game_id)),
+        ...s.cumulativeRounds.filter(r => !allIds.includes(r.game_id)),
         ...(cr ?? []).map(r => ({ id: r.id, game_id: r.game_id, round_number: r.round_number, scores: r.scores })),
       ],
       bracketMatches: [
-        ...s.bracketMatches.filter(r => !gameIds.includes(r.game_id)),
+        ...s.bracketMatches.filter(r => !allIds.includes(r.game_id)),
         ...(bm ?? []).map(r => ({ id: r.id, game_id: r.game_id, round: r.round, match_number: r.match_number, team_a_id: r.team_a_id, team_b_id: r.team_b_id, score_a: r.score_a, score_b: r.score_b, winner_id: r.winner_id, loser_bracket: r.loser_bracket })),
       ],
       games: [
-        ...s.games.filter(g => !gameIds.includes(g.id)),
+        ...s.games.filter(g => g.edition_id !== editionId),
         ...(gm ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order })),
       ],
     }))

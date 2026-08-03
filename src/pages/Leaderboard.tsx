@@ -189,10 +189,8 @@ export default function Leaderboard() {
   const [flashMessage, setFlashMessage] = useState<string | null>(null)
   const prevRef = useRef<Map<string, number>>(new Map())
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Keep a ref so the Realtime handler always sees the latest games without
-  // causing the subscription to tear down and reconnect on every refresh.
-  const allGamesRef = useRef(allGames)
-  useEffect(() => { allGamesRef.current = allGames }, [allGames])
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingGameIdRef = useRef<string | null>(null)
 
   function triggerFlash(msg: string) {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
@@ -214,22 +212,29 @@ export default function Leaderboard() {
   }, [games, teams, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches])
 
   // Realtime subscription — refresh when any result changes in Supabase.
-  // editionId is the only dep; allGames is read via ref to avoid reconnects.
+  // editionId is the only dep so the channel is never torn down mid-session.
   useEffect(() => {
     if (!editionId) return
 
-    function handleResultChange(payload: { new?: { game_id?: string } }) {
-      const gameId = payload.new?.game_id
-      const gameName = gameId ? allGamesRef.current.find(g => g.id === gameId)?.name : null
-      refreshEditionResults(editionId!).then(() => {
-        triggerFlash(gameName ? `New results — ${gameName}` : 'Scores updated')
-      })
+    function scheduleRefresh(gameId: string | null | undefined) {
+      // A single save writes many rows, so Supabase emits a burst of events.
+      // Debouncing collapses them into one refresh once the burst settles.
+      if (gameId) pendingGameIdRef.current = gameId
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
+      refreshTimerRef.current = setTimeout(() => {
+        const id = pendingGameIdRef.current
+        pendingGameIdRef.current = null
+        refreshEditionResults(editionId!).then(() => {
+          // Resolve the name after the refresh — a game created since this tab
+          // loaded is only in the store once refreshEditionResults has run.
+          const name = id ? useStore.getState().games.find(g => g.id === id)?.name : null
+          triggerFlash(name ? `New results — ${name}` : 'Scores updated')
+        })
+      }, 400)
     }
 
-    function handleGameChange() {
-      refreshEditionResults(editionId!).then(() => {
-        triggerFlash('Game status updated')
-      })
+    function handleResultChange(payload: { new?: { game_id?: string } }) {
+      scheduleRefresh(payload.new?.game_id)
     }
 
     const channel = supabase
@@ -239,7 +244,6 @@ export default function Leaderboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results' }, handleResultChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cumulative_rounds' }, handleResultChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bracket_matches' }, handleResultChange)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, handleGameChange)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [editionId])

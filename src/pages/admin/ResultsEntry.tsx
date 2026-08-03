@@ -80,6 +80,7 @@ export default function ResultsEntry({ game, clientId }: Props) {
   const savePointsResults = useStore(s => s.savePointsResults)
   const saveParticipantResults = useStore(s => s.saveParticipantResults)
   const addCumulativeRound = useStore(s => s.addCumulativeRound)
+  const updateGame = useStore(s => s.updateGame)
   const logAudit = useStore(s => s.logAudit)
 
   const teams = useMemo(() => allTeams.filter(t => t.client_id === clientId), [allTeams, clientId])
@@ -112,6 +113,7 @@ export default function ResultsEntry({ game, clientId }: Props) {
   })
 
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [showPin, setShowPin] = useState(false)
   const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null)
 
@@ -124,9 +126,33 @@ export default function ResultsEntry({ game, clientId }: Props) {
 
   async function onPinConfirmed() {
     setShowPin(false)
-    if (pendingAction) await pendingAction()
-    setPendingAction(null)
-    flash()
+    setSaveError('')
+    try {
+      if (pendingAction) await pendingAction()
+      flash()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed')
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
+  const errorBanner = saveError
+    ? <p className="re-save-error">⚠ Save failed: {saveError}</p>
+    : null
+
+  const isLocked = game.status === 'completed' && game.type !== 'cumulative'
+
+  if (isLocked) {
+    return (
+      <div className="results-entry">
+        <div className="re-locked">
+          <span className="re-locked-icon">🔒</span>
+          <p className="re-locked-text">Results submitted &amp; locked</p>
+          <p className="re-locked-hint">Change game status to Pending or Active in the workspace to re-enter.</p>
+        </div>
+      </div>
+    )
   }
 
   // ── Standard ──────────────────────────────────────────────
@@ -149,10 +175,18 @@ export default function ResultsEntry({ game, clientId }: Props) {
         <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
           const results = teams.filter(t => positions[t.id]).map(t => ({ team_id: t.id, position: parseInt(positions[t.id]) }))
           await saveStandardResults(game.id, results)
-          await logAudit('save_results', game.id, game.name, { type: 'standard', team_count: results.length })
+          await updateGame(game.id, { status: 'completed' })
+          await logAudit('save_results', game.id, game.name, {
+            type: 'standard',
+            team_count: results.length,
+            entries: results
+              .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, position: r.position }))
+              .sort((a, b) => a.position - b.position),
+          })
         })}>
           {saved ? '✓ Saved' : 'Save Results'}
         </button>
+        {errorBanner}
         <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
     )
@@ -175,10 +209,18 @@ export default function ResultsEntry({ game, clientId }: Props) {
         <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
           const results = teams.filter(t => scores[t.id]).map(t => ({ team_id: t.id, raw_score: parseFloat(scores[t.id]) }))
           await savePointsResults(game.id, results)
-          await logAudit('save_results', game.id, game.name, { type: 'points', team_count: results.length })
+          await updateGame(game.id, { status: 'completed' })
+          await logAudit('save_results', game.id, game.name, {
+            type: 'points',
+            team_count: results.length,
+            entries: results
+              .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, score: r.raw_score }))
+              .sort((a, b) => b.score - a.score),
+          })
         })}>
           {saved ? '✓ Saved' : 'Save Results'}
         </button>
+        {errorBanner}
         <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
     )
@@ -216,11 +258,19 @@ export default function ResultsEntry({ game, clientId }: Props) {
         <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
           const results = teams.filter(t => roundScores[t.id]).map(t => ({ team_id: t.id, score: parseFloat(roundScores[t.id]) }))
           await addCumulativeRound(game.id, results)
-          await logAudit('add_round', game.id, game.name, { round: rounds.length + 1, team_count: results.length })
+          await logAudit('add_round', game.id, game.name, {
+            type: 'cumulative',
+            round: rounds.length + 1,
+            team_count: results.length,
+            entries: results
+              .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, score: r.score }))
+              .sort((a, b) => b.score - a.score),
+          })
           setRoundScores(Object.fromEntries(teams.map(t => [t.id, ''])))
         })}>
           {saved ? '✓ Round Added' : `Add Round ${rounds.length + 1}`}
         </button>
+        {errorBanner}
         <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
     )
@@ -263,10 +313,22 @@ export default function ResultsEntry({ game, clientId }: Props) {
               .map(r => ({ team_id: t.id, participant_name: r.name.trim(), position: parseInt(r.position) }))
           )
           await saveParticipantResults(game.id, results)
-          await logAudit('save_results', game.id, game.name, { type: 'multi_participant', participant_count: results.length })
+          await updateGame(game.id, { status: 'completed' })
+          await logAudit('save_results', game.id, game.name, {
+            type: 'multi_participant',
+            participant_count: results.length,
+            entries: results
+              .map(r => ({
+                team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id,
+                participant: r.participant_name || '(unnamed)',
+                position: r.position,
+              }))
+              .sort((a, b) => a.position - b.position),
+          })
         })}>
           {saved ? '✓ Saved' : 'Save Results'}
         </button>
+        {errorBanner}
         <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
     )
