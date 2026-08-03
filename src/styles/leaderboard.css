@@ -241,23 +241,87 @@
   margin: 0 0 0.25rem;
 }
 
-/* ── Present button ───────────────────────────────────────── */
-.lb-present-btn {
+/* ── Ellipsis menu ────────────────────────────────────────── */
+.lb-menu-wrap {
   position: fixed;
   top: 1.2rem;
   right: 1.2rem;
-  background: rgba(124,58,237,0.15);
-  border: 1px solid rgba(124,58,237,0.4);
-  color: #c4b5fd;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  z-index: 50;
-  transition: all 0.15s;
+  z-index: 100;
 }
-.lb-present-btn:hover { background: rgba(124,58,237,0.3); color: #fff; }
+
+.lb-menu-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.lb-menu-btn:hover,
+.lb-menu-btn.active {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.25);
+  color: #fff;
+}
+
+.lb-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.lb-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #1a1a2e;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 0.4rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 200;
+}
+
+.lb-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: rgba(255,255,255,0.75);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.lb-menu-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+}
+
+.lb-menu-icon { font-size: 1rem; flex-shrink: 0; }
+
+.lb-menu-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 0.3rem 0;
+}
 
 /* ── Empty state ──────────────────────────────────────────── */
 .lb-empty {
@@ -570,4 +634,41 @@
   margin: auto;
   position: relative;
   z-index: 1;
+}
+
+/* ── Top-right cluster (QR + control menu) ───────────────── */
+.bs-topright {
+  position: fixed;
+  top: 1.5vw;
+  right: 1.5vw;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  z-index: 200;
+}
+
+/* ControlMenu sits inline inside the cluster */
+.bs-topright .cm-wrap {
+  position: relative;
+  top: auto;
+  right: auto;
+}
+
+/* ── QR badge ────────────────────────────────────────────── */
+.bs-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+.bs-qr:hover { opacity: 1; }
+.bs-qr canvas { border-radius: 8px; }
+.bs-qr-label {
+  font-size: clamp(0.5rem, 1vw, 0.68rem);
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  font-weight: 600;
 }

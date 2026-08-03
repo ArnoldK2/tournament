@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion'
 import type { LeaderboardEntry } from '../types'
 import { useStore } from '../store'
 import { supabase } from '../lib/supabase'
 import { computeLeaderboard } from '../store/scoring'
+import { exportEventData } from '../lib/exportEvent'
+import QRCode from 'qrcode'
+import ControlMenu from '../components/ControlMenu'
 import '../styles/leaderboard.css'
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -73,9 +76,31 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
   )
 }
 
+function QrBadge({ editionId }: { editionId: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const generateQR = useCallback(async () => {
+    if (!canvasRef.current) return
+    const url = `${window.location.origin}/hub/${editionId}`
+    await QRCode.toCanvas(canvasRef.current, url, {
+      width: 100,
+      margin: 1,
+      color: { dark: '#ffffff', light: '#00000000' },
+    })
+  }, [editionId])
+
+  useEffect(() => { generateQR() }, [generateQR])
+
+  return (
+    <div className="bs-qr">
+      <canvas ref={canvasRef} />
+      <span className="bs-qr-label">Scan me</span>
+    </div>
+  )
+}
+
 // ── Big Screen ─────────────────────────────────────────────────
 function BigScreenLeaderboard({
-  entries, clientName, eventName, editionLabel, editionId, flashMessage,
+  entries, clientName, eventName, editionLabel, editionId, flashMessage, role,
 }: {
   entries: LeaderboardEntry[]
   clientName: string
@@ -83,8 +108,8 @@ function BigScreenLeaderboard({
   editionLabel: string
   editionId: string
   flashMessage: string | null
+  role: string
 }) {
-  const navigate = useNavigate()
   return (
     <div className="bs-root">
       <div className="bs-blob bs-blob-1" />
@@ -92,10 +117,6 @@ function BigScreenLeaderboard({
       <div className="bs-blob bs-blob-3" />
 
       <UpdateFlash message={flashMessage} />
-
-      <button className="bs-progression-btn" onClick={() => navigate(`/progression/${editionId}`)} title="View progression">
-        📊
-      </button>
 
       <header className="bs-header">
         <div className="bs-header-left">
@@ -153,6 +174,11 @@ function BigScreenLeaderboard({
       {entries.length === 0 && (
         <p className="bs-empty">No results yet — scores will appear here</p>
       )}
+
+      <div className="bs-topright">
+        <QrBadge editionId={editionId} />
+        <ControlMenu editionId={editionId} currentView="bigscreen" role={role} />
+      </div>
     </div>
   )
 }
@@ -164,6 +190,14 @@ export default function Leaderboard() {
   const [searchParams] = useSearchParams()
   const isBigScreen = searchParams.get('display') === 'big'
   const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const currentRole = useStore(s => s.currentRole)
+
+  // Gate: redirect to register unless admin, big screen, or already registered
+  const isRegistered = isBigScreen || currentRole !== 'guest' || localStorage.getItem(`tt_registered_${editionId}`) === 'true'
+  useEffect(() => {
+    if (!isRegistered) navigate(`/register/${editionId}`, { replace: true })
+  }, [isRegistered, editionId, navigate])
 
   const editions = useStore(s => s.editions)
   const events = useStore(s => s.events)
@@ -266,6 +300,7 @@ export default function Leaderboard() {
         editionLabel={edition.label}
         editionId={editionId!}
         flashMessage={flashMessage}
+        role={currentRole}
       />
     )
   }
@@ -273,13 +308,16 @@ export default function Leaderboard() {
   return (
     <div className="lb-root">
       <button className="lb-back" onClick={() => navigate('/')}>← Back</button>
-      <button
-        className="lb-present-btn"
-        onClick={() => window.open(`/leaderboard/${editionId}?display=big`, '_blank')}
-        title="Open big screen view"
-      >
-        ⛶ Present
-      </button>
+
+      <ControlMenu
+        editionId={editionId!}
+        currentView="leaderboard"
+        role={currentRole}
+        newTab
+        onExport={currentRole !== 'guest' ? async () => {
+          await exportEventData(client, event, edition, teams, games, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches)
+        } : undefined}
+      />
 
       <motion.header
         className="lb-header"

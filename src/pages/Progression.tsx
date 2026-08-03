@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useStore } from '../store'
 import type { AppState } from '../store'
 import { computeLeaderboard } from '../store/scoring'
+import ControlMenu from '../components/ControlMenu'
 import '../styles/progression.css'
 
 interface Frame {
@@ -51,6 +52,7 @@ export default function Progression() {
   const { editionId } = useParams<{ editionId: string }>()
   const navigate = useNavigate()
   const store = useStore(s => s)
+  const currentRole = store.currentRole
 
   const frames = useMemo(() => buildFrames(editionId!, store), [
     editionId, store.games, store.standardResults, store.pointsResults,
@@ -261,6 +263,7 @@ export default function Progression() {
     return (
       <div className="prog-root">
         <button className="prog-back" onClick={() => navigate(-1)}>← Back</button>
+        <ControlMenu editionId={editionId!} currentView="progression" role={currentRole} />
         <div className="prog-empty">
           <div style={{ fontSize: '3rem' }}>📊</div>
           <p>No completed games yet</p>
@@ -272,6 +275,7 @@ export default function Progression() {
   return (
     <div className="prog-root">
       <button className="prog-back" onClick={() => navigate(-1)}>← Back</button>
+      <ControlMenu editionId={editionId!} currentView="progression" role={currentRole} />
 
       <header className="prog-header">
         <p className="prog-client">{client?.name}</p>

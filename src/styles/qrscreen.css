@@ -1,0 +1,116 @@
+/* ═══════════════════════════════════════════════════════════
+   QR Screen — projector-facing registration / feedback screen
+   ═══════════════════════════════════════════════════════════ */
+
+.qrs-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #040408;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+  overflow: hidden;
+  position: relative;
+}
+
+.qrs-bg {
+  position: fixed;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(99, 102, 241, 0.08) 0deg,
+    transparent 90deg,
+    rgba(99, 102, 241, 0.05) 180deg,
+    transparent 270deg,
+    rgba(99, 102, 241, 0.08) 360deg
+  );
+  animation: qrsBgSpin 40s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes qrsBgSpin { to { transform: rotate(360deg); } }
+
+/* scanlines */
+.qrs-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 3px,
+    rgba(0, 0, 0, 0.04) 3px, rgba(0, 0, 0, 0.04) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.qrs-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 2rem;
+  max-width: 600px;
+  width: 100%;
+}
+
+.qrs-client {
+  font-size: clamp(0.65rem, 1.2vw, 0.85rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+}
+
+.qrs-event {
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0;
+}
+
+.qrs-edition {
+  font-size: clamp(0.8rem, 1.5vw, 1rem);
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0 0 1.5rem;
+}
+
+.qrs-qr-wrap {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 1.8rem;
+  margin: 0.5rem 0;
+}
+
+.qrs-canvas { display: block; }
+
+.qrs-cta { margin-top: 1rem; }
+
+.qrs-heading {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  font-weight: 800;
+  margin: 0 0 0.4rem;
+}
+
+.qrs-sub {
+  font-size: clamp(0.85rem, 1.8vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+}
+
+.qrs-url {
+  font-size: clamp(0.6rem, 1vw, 0.75rem);
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 1rem 0 0;
+  word-break: break-all;
+}

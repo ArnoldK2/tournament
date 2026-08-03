@@ -103,6 +103,27 @@ export interface BracketMatch {
   loser_bracket: boolean
 }
 
+export interface AudienceRegistration {
+  id: string
+  edition_id: string
+  name: string
+  email: string
+  phone: string
+  house: string
+  years_at_school: number | null
+  role: 'participating' | 'cheerleading'
+  source: 'in_person' | 'online'
+  created_at: string
+}
+
+export interface Feedback {
+  id: string
+  edition_id: string
+  message: string
+  name: string
+  created_at: string
+}
+
 export interface LeaderboardEntry {
   team_id: string
   team_name: string

@@ -1,0 +1,372 @@
+/* ═══════════════════════════════════════════════════════════
+   Announcement — Final Results reveal screen
+   ═══════════════════════════════════════════════════════════ */
+
+.ann-root {
+  position: fixed;
+  inset: 0;
+  background: #040408;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+}
+
+.ann-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Subtle scanlines */
+.ann-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 3px,
+    rgba(0, 0, 0, 0.05) 3px, rgba(0, 0, 0, 0.05) 4px
+  );
+  pointer-events: none;
+  z-index: 90;
+}
+
+/* ── Intro ──────────────────────────────────────────────────── */
+.ann-intro-bg {
+  position: fixed;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(99, 102, 241, 0.1) 0deg, transparent 90deg,
+    rgba(99, 102, 241, 0.07) 180deg, transparent 270deg,
+    rgba(99, 102, 241, 0.1) 360deg
+  );
+  animation: annBgSpin 30s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes annBgSpin { to { transform: rotate(360deg); } }
+
+.ann-intro-content {
+  text-align: center;
+  z-index: 10;
+  padding: 2rem;
+}
+
+.ann-intro-client {
+  font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0 0 0.8rem;
+}
+
+.ann-intro-event {
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0 0 0.5rem;
+}
+
+.ann-intro-edition {
+  font-size: clamp(0.85rem, 2vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 0 0 2.5rem;
+}
+
+.ann-intro-divider {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  margin: 0 auto 1.5rem;
+}
+
+.ann-intro-title {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 3rem;
+}
+
+.ann-intro-cta {
+  font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+}
+
+/* ── Ambient glow ───────────────────────────────────────────── */
+.ann-glow {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, var(--team-color, #6366f1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Progress dots ──────────────────────────────────────────── */
+.ann-progress {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 20;
+}
+
+.ann-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.4s, transform 0.4s;
+}
+
+.ann-dot.filled {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.3);
+}
+
+/* ── Stage ──────────────────────────────────────────────────── */
+.ann-stage {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 2rem;
+}
+
+/* ── Mystery card ── */
+.ann-mystery { text-align: center; }
+
+.ann-mystery-qmarks {
+  font-size: clamp(6rem, 22vw, 16rem);
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.06);
+  margin: 0 0 0.5rem;
+  line-height: 1;
+}
+
+.ann-mystery-position {
+  font-size: clamp(1.2rem, 3.5vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+/* ── Reveal card (scale from front) ── */
+.ann-reveal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.ann-reveal-name {
+  font-size: clamp(3.5rem, 14vw, 10rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0;
+}
+
+.ann-reveal-meta {
+  font-size: clamp(1.2rem, 3.5vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Flash overlay ── */
+.ann-flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 200;
+  pointer-events: none;
+  animation: annFlash 0.25s ease-out forwards;
+}
+
+@keyframes annFlash {
+  0% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Winner / Champion screen
+   ═══════════════════════════════════════════════════════════ */
+.ann-winner-root { background: #020205; }
+
+.ann-winner-glow {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 90% 70% at 50% 50%, var(--wc, #f5c518) 0%, transparent 65%);
+  opacity: 0.18;
+  pointer-events: none;
+  animation: winnerGlowPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes winnerGlowPulse {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.06); }
+}
+
+.ann-winner-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem;
+}
+
+.ann-winner-trophy {
+  font-size: clamp(5rem, 14vw, 10rem);
+  line-height: 1;
+  filter: drop-shadow(0 0 40px rgba(245, 197, 24, 0.8));
+}
+
+.ann-winner-label {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 900;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0;
+}
+
+.ann-winner-name {
+  font-size: clamp(4rem, 14vw, 10rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0;
+  color: #FFD700;
+  text-shadow:
+    0 0 60px rgba(255, 215, 0, 0.8),
+    0 0 120px rgba(255, 215, 0, 0.4);
+  animation: annWinnerPulse 1.4s ease 1.5s infinite;
+}
+
+@keyframes annWinnerPulse {
+  0%, 100% { text-shadow: 0 0 60px rgba(255,215,0,.8), 0 0 120px rgba(255,215,0,.4); }
+  50% { text-shadow: 0 0 80px rgba(255,215,0,1), 0 0 160px rgba(255,215,0,.7); filter: brightness(1.25); }
+}
+
+.ann-winner-score {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Confetti
+   ═══════════════════════════════════════════════════════════ */
+.ann-confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.ann-confetti-piece {
+  position: absolute;
+  top: -20px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg) scaleX(1);
+    opacity: 1;
+  }
+  40% {
+    transform: translateY(40vh) rotate(360deg) scaleX(calc(var(--tilt, 1) * 1));
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg) scaleX(calc(var(--tilt, 1) * -1));
+    opacity: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Fireworks
+   ═══════════════════════════════════════════════════════════ */
+.ann-fireworks {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+  overflow: hidden;
+}
+
+.ann-firework {
+  position: absolute;
+  width: 0;
+  height: 0;
+  animation: fireworkCycle 2.8s ease-out infinite;
+}
+
+@keyframes fireworkCycle {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.ann-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--fw-color, #f5c518);
+  box-shadow: 0 0 6px var(--fw-color, #f5c518), 0 0 12px var(--fw-color, #f5c518);
+  animation: sparkBurst 2.8s ease-out infinite;
+  transform: rotate(var(--angle)) translateX(0);
+}
+
+@keyframes sparkBurst {
+  0% {
+    transform: rotate(var(--angle)) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  60% {
+    transform: rotate(var(--angle)) translateX(var(--fw-size, 60px));
+    opacity: 0.8;
+  }
+  100% {
+    transform: rotate(var(--angle)) translateX(calc(var(--fw-size, 60px) * 1.3));
+    opacity: 0;
+  }
+}

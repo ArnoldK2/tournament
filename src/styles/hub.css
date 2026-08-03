@@ -1,0 +1,109 @@
+/* ═══════════════════════════════════════════════════════════
+   Hub — scanned QR landing page
+   ═══════════════════════════════════════════════════════════ */
+
+.hub-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a14;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+  padding: 2rem 1.25rem;
+}
+
+.hub-content {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.hub-client {
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+}
+
+.hub-event {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.hub-edition {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0 0 1.4rem;
+}
+
+.hub-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.hub-action {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
+}
+
+.hub-action:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.hub-action:first-child {
+  background: rgba(124, 58, 237, 0.12);
+  border-color: rgba(124, 58, 237, 0.3);
+}
+.hub-action:first-child:hover {
+  background: rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+.hub-action-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  width: 2rem;
+  text-align: center;
+}
+
+.hub-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.hub-action-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.hub-action-sub {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.hub-action-arrow {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
