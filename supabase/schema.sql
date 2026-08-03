@@ -134,7 +134,8 @@ create table if not exists audience_registrations (
   email text not null default '',
   phone text not null default '',
   house text not null default '',
-  years_at_school integer,
+  year_from integer,
+  year_to integer,
   role text not null default 'cheerleading' check (role in ('participating','cheerleading')),
   source text not null default 'online' check (source in ('in_person','online')),
   created_at timestamptz default now()

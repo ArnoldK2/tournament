@@ -23,7 +23,8 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [house, setHouse] = useState('')
-  const [years, setYears] = useState('')
+  const [yearFrom, setYearFrom] = useState('')
+  const [yearTo, setYearTo] = useState('')
   const [role, setRole] = useState<'participating' | 'cheerleading'>('cheerleading')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -72,7 +73,8 @@ export default function Register() {
       email: email.trim(),
       phone: phone.trim(),
       house,
-      years_at_school: years ? parseInt(years) : null,
+      year_from: yearFrom ? parseInt(yearFrom) : null,
+      year_to: yearTo ? parseInt(yearTo) : null,
       role,
       source,
     })
@@ -187,16 +189,29 @@ export default function Register() {
         </div>
 
         <label className="aud-label">Years at school</label>
-        <input
-          className="aud-input"
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={30}
-          value={years}
-          onChange={e => setYears(e.target.value)}
-          placeholder="e.g. 3"
-        />
+        <div className="aud-year-range">
+          <input
+            className="aud-input"
+            type="number"
+            inputMode="numeric"
+            min={1900}
+            max={2100}
+            value={yearFrom}
+            onChange={e => setYearFrom(e.target.value)}
+            placeholder="From (e.g. 2010)"
+          />
+          <span className="aud-year-sep">–</span>
+          <input
+            className="aud-input"
+            type="number"
+            inputMode="numeric"
+            min={1900}
+            max={2100}
+            value={yearTo}
+            onChange={e => setYearTo(e.target.value)}
+            placeholder="To (e.g. 2015)"
+          />
+        </div>
 
         <label className="aud-label">I am...</label>
         <div className="aud-role-group">

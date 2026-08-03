@@ -110,7 +110,8 @@ export interface AudienceRegistration {
   email: string
   phone: string
   house: string
-  years_at_school: number | null
+  year_from: number | null
+  year_to: number | null
   role: 'participating' | 'cheerleading'
   source: 'in_person' | 'online'
   created_at: string

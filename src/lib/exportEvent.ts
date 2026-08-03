@@ -137,14 +137,14 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
   XLSX.utils.book_append_sheet(wb, grSheet, 'Game Results')
 
   // ── 4. Audience ─────────────────────────────────────
-  const audHeader = ['Name', 'Email', 'Phone', 'House', 'Years at School', 'Role', 'Source', 'Registered At']
+  const audHeader = ['Name', 'Email', 'Phone', 'House', 'Year From', 'Year To', 'Role', 'Source', 'Registered At']
   const audRows = d.registrations.map(r => [
     r.name, r.email, r.phone, r.house,
-    r.years_at_school ?? '', r.role, r.source,
+    r.year_from ?? '', r.year_to ?? '', r.role, r.source,
     new Date(r.created_at).toLocaleString(),
   ])
   const audSheet = XLSX.utils.aoa_to_sheet([audHeader, ...audRows])
-  audSheet['!cols'] = [{ wch: 22 }, { wch: 26 }, { wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 22 }]
+  audSheet['!cols'] = [{ wch: 22 }, { wch: 26 }, { wch: 16 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 22 }]
   XLSX.utils.book_append_sheet(wb, audSheet, 'Audience')
 
   // ── 5. Audience Analysis ────────────────────────────
@@ -171,14 +171,14 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
   const cheerleading = d.registrations.filter(r => r.role === 'cheerleading').length
   analysisRows.push(['Participating', participating], ['Cheerleading', cheerleading])
 
-  analysisRows.push([], ['By Years at School'])
-  const yearCounts = new Map<string, number>()
+  analysisRows.push([], ['By Graduation Year (year left)'])
+  const gradCounts = new Map<string, number>()
   d.registrations.forEach(r => {
-    const y = r.years_at_school != null ? `${r.years_at_school} years` : '(not specified)'
-    yearCounts.set(y, (yearCounts.get(y) ?? 0) + 1)
+    const y = r.year_to != null ? String(r.year_to) : '(not specified)'
+    gradCounts.set(y, (gradCounts.get(y) ?? 0) + 1)
   })
-  Array.from(yearCounts.entries())
-    .sort((a, b) => b[1] - a[1])
+  Array.from(gradCounts.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
     .forEach(([yr, count]) => analysisRows.push([yr, count]))
 
   const analysisSheet = XLSX.utils.aoa_to_sheet(analysisRows)
