@@ -8,13 +8,14 @@ import '../../styles/admin.css'
 import '../../styles/workspace.css'
 
 const GAME_TYPES: { value: GameType; label: string; desc: string }[] = [
-  { value: 'standard',            label: 'Standard',           desc: 'One position per team' },
-  { value: 'points',              label: 'Points',             desc: 'Raw score per team' },
-  { value: 'multi_participant',   label: 'Multi-Participant',  desc: 'Individual athletes per team' },
-  { value: 'cumulative',          label: 'Cumulative Rounds',  desc: 'Scores add up across rounds' },
-  { value: 'bracket_single',      label: 'Single Elimination', desc: 'Lose once and you\'re out' },
-  { value: 'bracket_double',      label: 'Double Elimination', desc: 'Two losses to be eliminated' },
-  { value: 'bracket_round_robin', label: 'Round Robin',        desc: 'Everyone plays everyone' },
+  { value: 'standard',              label: 'Standard',           desc: 'One position per team' },
+  { value: 'points',                label: 'Points',             desc: 'Raw score per team' },
+  { value: 'multi_participant',     label: 'Multi-Participant',  desc: 'Individual athletes per team' },
+  { value: 'participant_attempts',  label: 'Attempt Tracker',    desc: 'Track hits/misses per participant' },
+  { value: 'cumulative',            label: 'Cumulative Rounds',  desc: 'Scores add up across rounds' },
+  { value: 'bracket_single',        label: 'Single Elimination', desc: 'Lose once and you\'re out' },
+  { value: 'bracket_double',        label: 'Double Elimination', desc: 'Two losses to be eliminated' },
+  { value: 'bracket_round_robin',   label: 'Round Robin',        desc: 'Everyone plays everyone' },
 ]
 
 export default function EditionWorkspace() {
@@ -61,30 +62,40 @@ export default function EditionWorkspace() {
   const [direction, setDirection] = useState<ScoringDirection>('lower_is_better')
   const [weight, setWeight] = useState(1)
   const [gameStatus, setGameStatus] = useState<'pending' | 'active' | 'completed'>('pending')
+  const [participantsPerTeam, setParticipantsPerTeam] = useState(1)
+  const [attemptsPerParticipant, setAttemptsPerParticipant] = useState(1)
 
   if (!edition || !event || !client) { navigate(`/admin/${clientId}`); return null }
 
   function openAddGame() {
     setEditingGame(null); setGameName(''); setGameType('standard')
     setDirection('lower_is_better'); setWeight(1); setGameStatus('pending')
+    setParticipantsPerTeam(1); setAttemptsPerParticipant(1)
     setShowGameForm(true)
   }
 
   function openEditGame(g: Game) {
     setEditingGame(g); setGameName(g.name); setGameType(g.type)
     setDirection(g.scoring_direction); setWeight(g.weight); setGameStatus(g.status)
+    setParticipantsPerTeam(g.participants_per_team ?? 1)
+    setAttemptsPerParticipant(g.attempts_per_participant ?? 1)
     setShowGameForm(true)
   }
 
   function saveGame() {
     if (!gameName.trim()) return
-    const base = { edition_id: editionId!, name: gameName.trim(), type: gameType, scoring_direction: direction, weight, status: gameStatus }
+    const base = {
+      edition_id: editionId!, name: gameName.trim(), type: gameType,
+      scoring_direction: gameType === 'participant_attempts' ? 'higher_is_better' as const : direction,
+      weight, status: gameStatus,
+      ...(gameType === 'participant_attempts' ? { participants_per_team: participantsPerTeam, attempts_per_participant: attemptsPerParticipant } : {}),
+    }
     if (editingGame) updateGame(editingGame.id, base)
     else addGame({ ...base, order: games.length + 1 })
     setShowGameForm(false)
   }
 
-  const needsDirection = ['standard', 'multi_participant', 'cumulative'].includes(gameType)
+  const needsDirection = ['standard', 'multi_participant', 'cumulative', 'points'].includes(gameType)
   return (
     <div className="admin-root">
       <header className="admin-header">
@@ -129,6 +140,15 @@ export default function EditionWorkspace() {
               )}
             </AnimatePresence>
           </div>
+          {(role === 'client_admin' || role === 'super_admin') && (
+            <button
+              className={`scoring-mode-btn ${(edition.scoring_mode ?? 'dynamic') === 'fixed' ? 'fixed' : ''}`}
+              onClick={() => updateEdition(editionId!, { scoring_mode: (edition.scoring_mode ?? 'dynamic') === 'fixed' ? 'dynamic' : 'fixed' })}
+              title="Toggle scoring mode"
+            >
+              {(edition.scoring_mode ?? 'dynamic') === 'fixed' ? '★ Fixed Pts' : '○ Dynamic'}
+            </button>
+          )}
           <button className="icon-btn" onClick={() => navigate(`/leaderboard/${editionId}`)} title="View leaderboard">↗</button>
         </div>
       </header>
@@ -268,6 +288,23 @@ export default function EditionWorkspace() {
                   </button>
                 ))}
               </div>
+
+              {gameType === 'participant_attempts' && (
+                <>
+                  <label className="modal-label">Participants per team</label>
+                  <div className="weight-row">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button key={n} className={`weight-btn ${participantsPerTeam === n ? 'selected' : ''}`} onClick={() => setParticipantsPerTeam(n)}>{n}</button>
+                    ))}
+                  </div>
+                  <label className="modal-label">Attempts per participant</label>
+                  <div className="weight-row">
+                    {[1, 2, 3, 4, 5, 6].map(n => (
+                      <button key={n} className={`weight-btn ${attemptsPerParticipant === n ? 'selected' : ''}`} onClick={() => setAttemptsPerParticipant(n)}>{n}</button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               {needsDirection && (
                 <>

@@ -126,30 +126,6 @@ alter table audit_logs disable row level security;
 alter table users add constraint users_client_id_fkey
   foreign key (client_id) references clients(id) on delete set null;
 
--- ── Audience Registrations ──────────────────────────────────
-create table if not exists audience_registrations (
-  id uuid primary key default gen_random_uuid(),
-  edition_id uuid not null references editions(id) on delete cascade,
-  name text not null,
-  email text not null default '',
-  phone text not null default '',
-  house text not null default '',
-  year_from integer,
-  year_to integer,
-  role text not null default 'cheerleading' check (role in ('participating','cheerleading')),
-  source text not null default 'online' check (source in ('in_person','online')),
-  created_at timestamptz default now()
-);
-
--- ── Feedback ────────────────────────────────────────────────
-create table if not exists feedback (
-  id uuid primary key default gen_random_uuid(),
-  edition_id uuid not null references editions(id) on delete cascade,
-  message text not null,
-  name text not null default '',
-  created_at timestamptz default now()
-);
-
 -- ── Disable RLS (app-level auth via username+PIN) ──────────
 alter table users disable row level security;
 alter table clients disable row level security;
@@ -162,5 +138,24 @@ alter table points_results disable row level security;
 alter table participant_results disable row level security;
 alter table cumulative_rounds disable row level security;
 alter table bracket_matches disable row level security;
-alter table audience_registrations disable row level security;
-alter table feedback disable row level security;
+
+-- ── participant_attempt_results ─────────────────────────────
+create table if not exists participant_attempt_results (
+  id uuid primary key default gen_random_uuid(),
+  game_id uuid not null references games(id) on delete cascade,
+  team_id uuid not null references teams(id) on delete cascade,
+  participant_name text not null default '',
+  attempt_number integer not null,
+  success boolean not null default false,
+  created_at timestamptz default now()
+);
+alter table participant_attempt_results disable row level security;
+
+-- ── New columns (run as migration if tables already exist) ──
+alter table games
+  add column if not exists participants_per_team integer default 1,
+  add column if not exists attempts_per_participant integer default 1;
+
+alter table editions
+  add column if not exists scoring_mode text default 'dynamic'
+    check (scoring_mode in ('dynamic', 'fixed'));

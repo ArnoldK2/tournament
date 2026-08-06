@@ -136,6 +136,7 @@ export default function Announcement() {
   const standardResults = useStore(s => s.standardResults)
   const pointsResults = useStore(s => s.pointsResults)
   const participantResults = useStore(s => s.participantResults)
+  const participantAttemptResults = useStore(s => s.participantAttemptResults)
   const cumulativeRounds = useStore(s => s.cumulativeRounds)
   const bracketMatches = useStore(s => s.bracketMatches)
 
@@ -149,8 +150,9 @@ export default function Announcement() {
   )
 
   const entries = useMemo(() => computeLeaderboard({
-    games, teams, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches,
-  }), [games, teams, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches])
+    games, teams, scoringMode: edition?.scoring_mode ?? 'dynamic',
+    standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
+  }), [games, teams, edition, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches])
 
   // worst first, but 1st place goes straight to champion screen
   const revealOrder = useMemo(() => [...entries].sort((a, b) => b.rank - a.rank), [entries])

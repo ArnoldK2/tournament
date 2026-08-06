@@ -37,12 +37,14 @@ export interface Edition {
   label: string
   date: string
   status: 'upcoming' | 'active' | 'completed'
+  scoring_mode?: 'dynamic' | 'fixed'
 }
 
 export type GameType =
   | 'standard'
   | 'points'
   | 'multi_participant'
+  | 'participant_attempts'
   | 'cumulative'
   | 'bracket_single'
   | 'bracket_double'
@@ -59,6 +61,17 @@ export interface Game {
   weight: number
   status: 'pending' | 'active' | 'completed'
   order: number
+  participants_per_team?: number
+  attempts_per_participant?: number
+}
+
+export interface ParticipantAttemptResult {
+  id: string
+  game_id: string
+  team_id: string
+  participant_name: string
+  attempt_number: number
+  success: boolean
 }
 
 export interface StandardResult {

@@ -76,9 +76,11 @@ export default function ResultsEntry({ game, clientId }: Props) {
   const pointsResults = useStore(s => s.pointsResults)
   const participantResults = useStore(s => s.participantResults)
   const cumulativeRounds = useStore(s => s.cumulativeRounds)
+  const participantAttemptResults = useStore(s => s.participantAttemptResults)
   const saveStandardResults = useStore(s => s.saveStandardResults)
   const savePointsResults = useStore(s => s.savePointsResults)
   const saveParticipantResults = useStore(s => s.saveParticipantResults)
+  const saveParticipantAttemptResults = useStore(s => s.saveParticipantAttemptResults)
   const addCumulativeRound = useStore(s => s.addCumulativeRound)
   const updateGame = useStore(s => s.updateGame)
   const logAudit = useStore(s => s.logAudit)
@@ -110,6 +112,43 @@ export default function ResultsEntry({ game, clientId }: Props) {
         : [{ name: '', position: '' }]
     }
     return byTeam
+  })
+
+  const numParticipants = game.participants_per_team ?? 1
+  const numAttempts = game.attempts_per_participant ?? 1
+
+  // attemptGrid[teamId][participantIdx][attemptIdx] = success boolean
+  const [attemptGrid, setAttemptGrid] = useState<Record<string, boolean[][]>>(() => {
+    const grid: Record<string, boolean[][]> = {}
+    for (const t of teams) {
+      const existing = participantAttemptResults.filter(r => r.game_id === game.id && r.team_id === t.id)
+      if (existing.length > 0) {
+        const byP: boolean[][] = []
+        const names = [...new Set(existing.map(r => r.participant_name))]
+        for (const name of names) {
+          const attempts = existing
+            .filter(r => r.participant_name === name)
+            .sort((a, b) => a.attempt_number - b.attempt_number)
+            .map(r => r.success)
+          byP.push(attempts)
+        }
+        grid[t.id] = byP
+      } else {
+        grid[t.id] = Array.from({ length: numParticipants }, () => Array.from({ length: numAttempts }, () => false))
+      }
+    }
+    return grid
+  })
+
+  const [attemptNames, setAttemptNames] = useState<Record<string, string[]>>(() => {
+    const names: Record<string, string[]> = {}
+    for (const t of teams) {
+      const existing = participantAttemptResults.filter(r => r.game_id === game.id && r.team_id === t.id)
+      names[t.id] = existing.length > 0
+        ? [...new Set(existing.map(r => r.participant_name))]
+        : Array.from({ length: numParticipants }, () => '')
+    }
+    return names
   })
 
   const [saved, setSaved] = useState(false)
@@ -324,6 +363,103 @@ export default function ResultsEntry({ game, clientId }: Props) {
                 position: r.position,
               }))
               .sort((a, b) => a.position - b.position),
+          })
+        })}>
+          {saved ? '✓ Saved' : 'Save Results'}
+        </button>
+        {errorBanner}
+        <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
+      </div>
+    )
+  }
+
+  // ── Participant Attempts ──────────────────────────────────
+  if (game.type === 'participant_attempts') {
+    const teamTotals = teams.map(t => ({
+      team: t,
+      total: (attemptGrid[t.id] ?? []).flat().filter(Boolean).length,
+    })).sort((a, b) => b.total - a.total)
+
+    return (
+      <div className="results-entry">
+        <p className="re-hint">
+          Tap each attempt — ✓ scored, ✗ missed · {numParticipants} participant{numParticipants > 1 ? 's' : ''} × {numAttempts} attempt{numAttempts > 1 ? 's' : ''}
+        </p>
+        {teams.map(team => {
+          const grid = attemptGrid[team.id] ?? []
+          const names = attemptNames[team.id] ?? []
+          const teamTotal = grid.flat().filter(Boolean).length
+          return (
+            <div key={team.id} className="re-attempt-team" style={{ '--team-color': team.color } as React.CSSProperties}>
+              <div className="re-attempt-header">
+                <span className="re-dot" />
+                <span className="re-name">{team.name}</span>
+                <span className="re-attempt-total">{teamTotal} / {numParticipants * numAttempts}</span>
+              </div>
+              {grid.map((attempts, pi) => (
+                <div key={pi} className="re-attempt-row">
+                  <input
+                    className="re-input flex"
+                    placeholder={`Participant ${pi + 1}`}
+                    value={names[pi] ?? ''}
+                    onChange={e => setAttemptNames(prev => ({
+                      ...prev,
+                      [team.id]: prev[team.id].map((n, i) => i === pi ? e.target.value : n),
+                    }))}
+                  />
+                  <div className="re-attempt-btns">
+                    {attempts.map((success, ai) => (
+                      <button
+                        key={ai}
+                        className={`re-attempt-btn ${success ? 'hit' : 'miss'}`}
+                        onClick={() => setAttemptGrid(prev => ({
+                          ...prev,
+                          [team.id]: prev[team.id].map((row, ri) =>
+                            ri === pi ? row.map((v, vi) => vi === ai ? !v : v) : row
+                          ),
+                        }))}
+                      >
+                        {success ? '✓' : '✗'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })}
+
+        <div className="re-attempt-summary">
+          {teamTotals.map(({ team, total }, i) => (
+            <div key={team.id} className="re-attempt-summary-row" style={{ '--team-color': team.color } as React.CSSProperties}>
+              <span className="re-dot" />
+              <span className="re-name">{team.name}</span>
+              <span className="re-attempt-summary-score">#{i + 1} · {total} pts</span>
+            </div>
+          ))}
+        </div>
+
+        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
+          const results = teams.flatMap(t =>
+            (attemptGrid[t.id] ?? []).flatMap((attempts, pi) =>
+              attempts.map((success, ai) => ({
+                game_id: game.id,
+                team_id: t.id,
+                participant_name: (attemptNames[t.id]?.[pi] ?? '').trim(),
+                attempt_number: ai + 1,
+                success,
+              }))
+            )
+          )
+          await saveParticipantAttemptResults(game.id, results)
+          await updateGame(game.id, { status: 'completed' })
+          await logAudit('save_results', game.id, game.name, {
+            type: 'participant_attempts',
+            team_count: teams.length,
+            totals: teams.map(t => ({
+              team: t.name,
+              successes: (attemptGrid[t.id] ?? []).flat().filter(Boolean).length,
+            })),
           })
         })}>
           {saved ? '✓ Saved' : 'Save Results'}

@@ -27,9 +27,11 @@ function buildFrames(editionId: string, store: AppState): Frame[] {
     const lb = computeLeaderboard({
       games: gamesUpTo,
       teams,
+      scoringMode: edition?.scoring_mode ?? 'dynamic',
       standardResults: store.standardResults,
       pointsResults: store.pointsResults,
       participantResults: store.participantResults,
+      participantAttemptResults: store.participantAttemptResults,
       cumulativeRounds: store.cumulativeRounds,
       bracketMatches: store.bracketMatches,
     })
@@ -56,7 +58,7 @@ export default function Progression() {
 
   const frames = useMemo(() => buildFrames(editionId!, store), [
     editionId, store.games, store.standardResults, store.pointsResults,
-    store.participantResults, store.cumulativeRounds, store.bracketMatches,
+    store.participantResults, store.participantAttemptResults, store.cumulativeRounds, store.bracketMatches,
     store.teams, store.editions, store.events, store.clients,
   ])
 

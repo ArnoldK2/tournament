@@ -3,7 +3,7 @@ import { supabase } from './supabase'
 import { computeLeaderboard } from '../store/scoring'
 import type {
   Client, TournamentEvent, Edition, Team, Game,
-  StandardResult, PointsResult, ParticipantResult,
+  StandardResult, PointsResult, ParticipantResult, ParticipantAttemptResult,
   CumulativeRound, BracketMatch, AudienceRegistration, Feedback,
   LeaderboardEntry,
 } from '../types'
@@ -17,6 +17,7 @@ interface ExportData {
   standardResults: StandardResult[]
   pointsResults: PointsResult[]
   participantResults: ParticipantResult[]
+  participantAttemptResults: ParticipantAttemptResult[]
   cumulativeRounds: CumulativeRound[]
   bracketMatches: BracketMatch[]
   leaderboard: LeaderboardEntry[]
@@ -28,12 +29,13 @@ async function fetchExportData(
   client: Client, event: TournamentEvent, edition: Edition,
   teams: Team[], games: Game[],
   standardResults: StandardResult[], pointsResults: PointsResult[],
-  participantResults: ParticipantResult[], cumulativeRounds: CumulativeRound[],
-  bracketMatches: BracketMatch[],
+  participantResults: ParticipantResult[], participantAttemptResults: ParticipantAttemptResult[],
+  cumulativeRounds: CumulativeRound[], bracketMatches: BracketMatch[],
 ): Promise<ExportData> {
   const leaderboard = computeLeaderboard({
-    games, teams, standardResults, pointsResults,
-    participantResults, cumulativeRounds, bracketMatches,
+    games, teams, scoringMode: edition.scoring_mode ?? 'dynamic',
+    standardResults, pointsResults,
+    participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
   })
 
   const [{ data: regs }, { data: fb }] = await Promise.all([
@@ -43,7 +45,7 @@ async function fetchExportData(
 
   return {
     client, event, edition, teams, games,
-    standardResults, pointsResults, participantResults,
+    standardResults, pointsResults, participantResults, participantAttemptResults,
     cumulativeRounds, bracketMatches, leaderboard,
     registrations: (regs ?? []) as AudienceRegistration[],
     feedback: (fb ?? []) as Feedback[],
@@ -205,12 +207,12 @@ export async function exportEventData(
   client: Client, event: TournamentEvent, edition: Edition,
   teams: Team[], games: Game[],
   standardResults: StandardResult[], pointsResults: PointsResult[],
-  participantResults: ParticipantResult[], cumulativeRounds: CumulativeRound[],
-  bracketMatches: BracketMatch[],
+  participantResults: ParticipantResult[], participantAttemptResults: ParticipantAttemptResult[],
+  cumulativeRounds: CumulativeRound[], bracketMatches: BracketMatch[],
 ) {
   const data = await fetchExportData(
     client, event, edition, teams, games,
-    standardResults, pointsResults, participantResults,
+    standardResults, pointsResults, participantResults, participantAttemptResults,
     cumulativeRounds, bracketMatches,
   )
   const wb = buildWorkbook(data)

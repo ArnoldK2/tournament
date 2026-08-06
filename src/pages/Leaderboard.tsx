@@ -207,6 +207,7 @@ export default function Leaderboard() {
   const standardResults = useStore(s => s.standardResults)
   const pointsResults = useStore(s => s.pointsResults)
   const participantResults = useStore(s => s.participantResults)
+  const participantAttemptResults = useStore(s => s.participantAttemptResults)
   const cumulativeRounds = useStore(s => s.cumulativeRounds)
   const bracketMatches = useStore(s => s.bracketMatches)
   const refreshEditionResults = useStore(s => s.refreshEditionResults)
@@ -237,13 +238,14 @@ export default function Leaderboard() {
   const entries = useMemo(() => {
     if (!teams.length || !games.length) return []
     const computed = computeLeaderboard({
-      games, teams, standardResults, pointsResults,
-      participantResults, cumulativeRounds, bracketMatches,
+      games, teams, scoringMode: edition?.scoring_mode ?? 'dynamic',
+      standardResults, pointsResults,
+      participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
     })
     const result = computed.map(e => ({ ...e, prev_rank: prevRef.current.get(e.team_id) }))
     prevRef.current = new Map(computed.map(e => [e.team_id, e.rank]))
     return result
-  }, [games, teams, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches])
+  }, [games, teams, edition, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches])
 
   // Realtime subscription — refresh when any result changes in Supabase.
   // editionId is the only dep so the channel is never torn down mid-session.
@@ -278,6 +280,7 @@ export default function Leaderboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results' }, handleResultChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cumulative_rounds' }, handleResultChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bracket_matches' }, handleResultChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_attempt_results' }, handleResultChange)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [editionId])
@@ -315,7 +318,7 @@ export default function Leaderboard() {
         role={currentRole}
         newTab
         onExport={currentRole !== 'guest' ? async () => {
-          await exportEventData(client, event, edition, teams, games, standardResults, pointsResults, participantResults, cumulativeRounds, bracketMatches)
+          await exportEventData(client, event, edition, teams, games, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches)
         } : undefined}
       />
 
