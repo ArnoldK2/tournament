@@ -341,12 +341,12 @@
   background: #050510;
   display: flex;
   flex-direction: column;
-  padding: 2.5vw 3vw;
+  padding: 2.8vw 3.5vw;
   font-family: 'Segoe UI', system-ui, sans-serif;
   color: #fff;
   overflow: hidden;
   position: relative;
-  gap: 2.5vw;
+  gap: 2.8vw;
 }
 
 /* ── Ambient blobs ────────────────────────────────────────── */
@@ -390,7 +390,7 @@
 }
 
 .bs-client {
-  font-size: clamp(0.8rem, 1.2vw, 1rem);
+  font-size: clamp(1rem, 1.6vw, 3rem);
   color: rgba(255,255,255,0.35);
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -398,7 +398,7 @@
 }
 
 .bs-title {
-  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-size: clamp(3rem, 6.5vw, 12rem);
   font-weight: 900;
   letter-spacing: -0.02em;
   background: linear-gradient(135deg, #f9e84e 0%, #f97316 50%, #e040fb 100%);
@@ -416,7 +416,7 @@
 }
 
 .bs-edition {
-  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-size: clamp(1.2rem, 2vw, 4rem);
   color: rgba(255,255,255,0.5);
   letter-spacing: 0.1em;
   font-weight: 600;
@@ -426,13 +426,13 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-size: clamp(0.8rem, 1.4vw, 2.5rem);
   font-weight: 700;
   letter-spacing: 0.2em;
   color: #4ade80;
   background: rgba(74,222,128,0.1);
   border: 1px solid rgba(74,222,128,0.3);
-  padding: 0.2rem 0.75rem;
+  padding: 0.3rem 1rem;
   border-radius: 999px;
 }
 
@@ -524,22 +524,22 @@
   gap: 0.3vw;
 }
 
-.medal-big { font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1; }
+.medal-big { font-size: clamp(3rem, 7vw, 12rem); line-height: 1; }
 .rank-number-big {
-  font-size: clamp(2rem, 4vw, 4rem);
+  font-size: clamp(2.5rem, 5.5vw, 10rem);
   font-weight: 900;
   color: rgba(255,255,255,0.4);
 }
 
 .bs-podium-name {
-  font-size: clamp(1.2rem, 2.5vw, 2.5rem);
+  font-size: clamp(1.5rem, 3.2vw, 6rem);
   font-weight: 800;
   letter-spacing: -0.01em;
   word-break: break-word;
 }
 
 .score-big {
-  font-size: clamp(1.5rem, 3vw, 3rem);
+  font-size: clamp(2rem, 4vw, 7rem);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   background: linear-gradient(135deg, #fff 60%, rgba(255,255,255,0.6));
@@ -595,11 +595,20 @@
 }
 
 .bs-rest-name {
-  font-size: clamp(1rem, 1.8vw, 1.8rem);
+  font-size: clamp(1.2rem, 2.4vw, 4.5rem);
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ── Big screen overrides for shared classes ──────────────── */
+.bs-root .score {
+  font-size: clamp(1.5rem, 2.6vw, 5rem);
+}
+.bs-root .rank-number {
+  font-size: clamp(1.4rem, 2.2vw, 4rem);
+  font-weight: 800;
 }
 
 /* ── Progression button (big screen) ──────────────────────── */
