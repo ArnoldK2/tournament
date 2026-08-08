@@ -486,6 +486,36 @@
   .modal-btn { width: 100%; text-align: center; }
 }
 
+/* ── Game top 3 strip ────────────────────────────────────── */
+.ws-top3 {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.55rem 0.8rem;
+  margin-bottom: 0.75rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+.ws-top3-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.ws-top3-medal {
+  font-size: 1rem;
+  line-height: 1;
+}
+.ws-top3-name {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+}
+
 /* ── Reopen warning ──────────────────────────────────────── */
 .reopen-warning {
   font-size: 0.8rem;

@@ -2,10 +2,43 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
+import { computeLeaderboard } from '../../store/scoring'
 import ResultsEntry from './ResultsEntry'
-import type { Game, GameType, ScoringDirection } from '../../types'
+import type { Game, GameType, ScoringDirection, Team } from '../../types'
 import '../../styles/admin.css'
 import '../../styles/workspace.css'
+
+const MEDALS = ['🥇', '🥈', '🥉']
+
+function GameTop3({ game, teams, scoringMode }: { game: Game; teams: Team[]; scoringMode: 'dynamic' | 'fixed' }) {
+  const standardResults = useStore(s => s.standardResults)
+  const pointsResults = useStore(s => s.pointsResults)
+  const participantResults = useStore(s => s.participantResults)
+  const participantAttemptResults = useStore(s => s.participantAttemptResults)
+  const cumulativeRounds = useStore(s => s.cumulativeRounds)
+  const bracketMatches = useStore(s => s.bracketMatches)
+
+  const top3 = useMemo(() => {
+    const entries = computeLeaderboard({
+      games: [game], teams, scoringMode,
+      standardResults, pointsResults, participantResults,
+      participantAttemptResults, cumulativeRounds, bracketMatches,
+    })
+    return entries.filter(e => e.total_score > 0).slice(0, 3)
+  }, [game, teams, scoringMode, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches])
+
+  if (!top3.length) return null
+  return (
+    <div className="ws-top3">
+      {top3.map((e, i) => (
+        <div key={e.team_id} className="ws-top3-row">
+          <span className="ws-top3-medal">{MEDALS[i]}</span>
+          <span className="ws-top3-name">{e.team_name}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const GAME_TYPES: { value: GameType; label: string; desc: string }[] = [
   { value: 'standard',              label: 'Standard',           desc: 'One position per team' },
@@ -27,6 +60,7 @@ export default function EditionWorkspace() {
   const editions = useStore(s => s.editions)
   const allGames = useStore(s => s.games)
   const allEditions = useStore(s => s.editions)
+  const allTeams = useStore(s => s.teams)
   const role = useStore(s => s.currentRole)
   const updateEdition = useStore(s => s.updateEdition)
   const addGame = useStore(s => s.addGame)
@@ -42,6 +76,7 @@ export default function EditionWorkspace() {
     () => allGames.filter(g => g.edition_id === editionId).sort((a, b) => a.order - b.order),
     [allGames, editionId]
   )
+  const teams = useMemo(() => allTeams.filter(t => t.client_id === clientId), [allTeams, clientId])
 
   // Previous edition of same event (for copy)
   const prevEdition = useMemo(() => {
@@ -269,6 +304,10 @@ export default function EditionWorkspace() {
                           {game.status === 'pending' ? '▶ Start' : game.status === 'active' ? '✓ Complete' : '↩ Reopen'}
                         </button>
                       </div>
+
+                      {game.status === 'completed' && (
+                        <GameTop3 game={game} teams={teams} scoringMode={edition.scoring_mode ?? 'dynamic'} />
+                      )}
 
                       <ResultsEntry game={game} clientId={clientId!} />
                     </div>
