@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
+import BrandLogos from '../components/BrandLogos'
 import '../styles/hub.css'
 
 export default function Hub() {
@@ -95,6 +96,8 @@ export default function Hub() {
             </motion.button>
           ))}
         </div>
+
+        <BrandLogos variant="footer" />
       </motion.div>
     </div>
   )

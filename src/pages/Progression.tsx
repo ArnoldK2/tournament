@@ -4,6 +4,7 @@ import { useStore } from '../store'
 import type { AppState } from '../store'
 import { computeLeaderboard } from '../store/scoring'
 import ControlMenu from '../components/ControlMenu'
+import BrandLogos from '../components/BrandLogos'
 import '../styles/progression.css'
 
 interface Frame {
@@ -299,6 +300,8 @@ export default function Progression() {
         </button>
         <button className="prog-btn" onClick={() => { stopPlay(); stepForward() }}>⏭ Step</button>
       </div>
+
+      <BrandLogos variant="corner" />
     </div>
   )
 }

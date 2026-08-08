@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
 import { supabase } from '../lib/supabase'
+import BrandLogos from '../components/BrandLogos'
 import '../styles/audience.css'
 
 export default function Register() {
@@ -168,6 +169,8 @@ export default function Register() {
         >
           {submitting ? 'Registering...' : 'Register →'}
         </button>
+
+        <BrandLogos variant="footer" />
       </motion.form>
     </div>
   )

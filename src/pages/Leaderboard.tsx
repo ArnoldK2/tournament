@@ -8,6 +8,7 @@ import { computeLeaderboard } from '../store/scoring'
 import { exportEventData } from '../lib/exportEvent'
 import QRCode from 'qrcode'
 import ControlMenu from '../components/ControlMenu'
+import BrandLogos from '../components/BrandLogos'
 import '../styles/leaderboard.css'
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -179,6 +180,8 @@ function BigScreenLeaderboard({
         <QrBadge editionId={editionId} />
         <ControlMenu editionId={editionId} currentView="bigscreen" role={role} />
       </div>
+
+      <BrandLogos variant="corner" />
     </div>
   )
 }
@@ -374,6 +377,8 @@ export default function Leaderboard() {
           </motion.p>
         )}
       </div>
+
+      <BrandLogos variant="footer" />
     </div>
   )
 }

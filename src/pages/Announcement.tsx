@@ -5,6 +5,7 @@ import { useStore } from '../store'
 import { computeLeaderboard } from '../store/scoring'
 import type { LeaderboardEntry } from '../types'
 import ControlMenu from '../components/ControlMenu'
+import BrandLogos from '../components/BrandLogos'
 import '../styles/announcement.css'
 
 function ordinal(n: number) {
@@ -219,6 +220,7 @@ export default function Announcement() {
     return (
       <div className="ann-root ann-center" onClick={advance}>
         <ControlMenu editionId={editionId!} currentView="announcement" role={currentRole} />
+        <BrandLogos variant="corner" />
         <div className="ann-intro-bg" />
         <motion.div
           className="ann-intro-content"
@@ -249,6 +251,7 @@ export default function Announcement() {
     return (
       <div className="ann-root ann-center ann-winner-root" onClick={() => navigate(-1)}>
         <ControlMenu editionId={editionId!} currentView="announcement" role={currentRole} />
+        <BrandLogos variant="corner" />
         <Confetti />
         <Fireworks />
         <div className="ann-winner-glow" style={{ '--wc': winner.team_color } as React.CSSProperties} />
@@ -302,6 +305,7 @@ export default function Announcement() {
   return (
     <div className="ann-root ann-center" onClick={advance}>
       <ControlMenu editionId={editionId!} currentView="announcement" role={currentRole} />
+      <BrandLogos variant="corner" />
       {flash && <div className="ann-flash" key={step} />}
 
       <motion.div

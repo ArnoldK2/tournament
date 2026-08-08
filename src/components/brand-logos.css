@@ -1,0 +1,50 @@
+.bl-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Images ────────────────────────────────────────────── */
+.bl-tcnoga {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 6px;
+  opacity: 0.75;
+}
+
+.bl-playhouse {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.75;
+}
+
+/* ── Footer variant (inline, centered) ─────────────────── */
+.bl-footer {
+  justify-content: center;
+  padding: 1.2rem 0 0.6rem;
+}
+
+/* ── Corner variant (fixed bottom-left watermark) ──────── */
+.bl-corner {
+  position: fixed;
+  bottom: 1.4vw;
+  left: 1.4vw;
+  z-index: 200;
+  gap: 0.5rem;
+}
+
+.bl-corner .bl-tcnoga {
+  height: 3.6vw;
+  min-height: 36px;
+  max-height: 64px;
+}
+
+.bl-corner .bl-playhouse {
+  height: 3vw;
+  min-height: 30px;
+  max-height: 54px;
+}
