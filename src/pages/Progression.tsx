@@ -14,7 +14,7 @@ interface Frame {
 
 function buildFrames(editionId: string, store: AppState): Frame[] {
   const games = store.games
-    .filter(g => g.edition_id === editionId && g.status !== 'pending')
+    .filter(g => g.edition_id === editionId && g.status === 'completed')
     .sort((a, b) => a.order - b.order)
   const edition = store.editions.find(e => e.id === editionId)
   const event = store.events.find(e => e.id === edition?.event_id)
@@ -49,8 +49,6 @@ function buildFrames(editionId: string, store: AppState): Frame[] {
   return frames
 }
 
-const COLORS = ['#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb923c', '#22d3ee', '#e879f9']
-
 export default function Progression() {
   const { editionId } = useParams<{ editionId: string }>()
   const navigate = useNavigate()
@@ -78,9 +76,9 @@ export default function Progression() {
   const teamIds = frames[0]?.teams.map(t => t.teamId) ?? []
   const teamColorMap = useMemo(() => {
     const map: Record<string, string> = {}
-    teamIds.forEach((id, i) => { map[id] = COLORS[i % COLORS.length] })
+    for (const t of store.teams) map[t.id] = t.color
     return map
-  }, [teamIds.join(',')])
+  }, [store.teams])
 
   const STEP_DURATION = 800
 
@@ -123,13 +121,13 @@ export default function Progression() {
       ctx.stroke()
     }
 
-    // Game labels (top)
+    // Game labels (top) — first word only
     ctx.fillStyle = 'rgba(255,255,255,0.5)'
     ctx.font = '600 11px system-ui'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'bottom'
     for (let gi = 0; gi <= upTo && gi < numGames; gi++) {
-      const name = frames[gi].gameName.toUpperCase()
+      const name = frames[gi].gameName.split(' ')[0].toUpperCase()
       const xPos = x(gi)
       ctx.globalAlpha = gi === upTo ? 1 : 0.5
       ctx.fillText(name, xPos, marginT - 16)
@@ -188,7 +186,7 @@ export default function Progression() {
       }
     }
 
-    // Team name labels on the right of the last visible frame
+    // Team name labels on the right of the last visible frame — first word only
     if (upTo >= 0 && upTo < numGames) {
       ctx.textAlign = 'left'
       ctx.textBaseline = 'middle'
@@ -197,11 +195,12 @@ export default function Progression() {
       for (const team of lastFrame.teams) {
         ctx.fillStyle = teamColorMap[team.teamId]
         const labelX = x(upTo) + DOT_R + 8
-        ctx.fillText(`${team.teamName}  (${team.cumulativeScore})`, labelX, y(team.rank))
+        const shortName = team.teamName.split(' ')[0]
+        ctx.fillText(`${shortName}  (${team.cumulativeScore})`, labelX, y(team.rank))
       }
     }
 
-    // Team name labels on the left (initial position)
+    // Team name labels on the left (initial position) — first word only
     if (upTo >= 0) {
       ctx.textAlign = 'right'
       ctx.textBaseline = 'middle'
@@ -210,7 +209,7 @@ export default function Progression() {
       for (const team of firstFrame.teams) {
         ctx.fillStyle = teamColorMap[team.teamId]
         ctx.globalAlpha = 0.6
-        ctx.fillText(team.teamName, marginL - 20, y(team.rank))
+        ctx.fillText(team.teamName.split(' ')[0], marginL - 20, y(team.rank))
       }
       ctx.globalAlpha = 1
     }
@@ -281,9 +280,8 @@ export default function Progression() {
       <ControlMenu editionId={editionId!} currentView="progression" role={currentRole} />
 
       <header className="prog-header">
-        <p className="prog-client">{client?.name}</p>
-        <h1 className="prog-title">Standings Progression</h1>
-        <p className="prog-subtitle">{event?.name} · {edition?.label}</p>
+        <h1 className="prog-title">{event?.name}</h1>
+        <p className="prog-subtitle">{edition?.label}</p>
       </header>
 
       <div className="prog-chart-wrap" ref={containerRef}>
