@@ -234,6 +234,7 @@ export default function Leaderboard() {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
     setFlashMessage(msg)
     flashTimerRef.current = setTimeout(() => setFlashMessage(null), 3000)
+    if (!isBigScreen && 'vibrate' in navigator) navigator.vibrate([80, 40, 80])
   }
 
   // useMemo computes entries on the same render as the store update,
