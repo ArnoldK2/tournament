@@ -33,14 +33,21 @@ function computePoints(game: Game, teams: Team[], results: PointsResult[], fixed
   const out = new Map<string, number>()
   const gameResults = results.filter(r => r.game_id === game.id)
   if (!gameResults.length) return out
+
+  if (!fixed) {
+    // Dynamic: raw score is taken as fact, multiplied by weight
+    for (const r of gameResults) out.set(r.team_id, r.raw_score * game.weight)
+    return out
+  }
+
+  // Fixed mode: rank by score, assign fixed points (winner=n, last=1)
   const sorted = [...gameResults].sort((a, b) =>
     game.scoring_direction === 'higher_is_better' ? b.raw_score - a.raw_score : a.raw_score - b.raw_score
   )
   const n = teams.length
   sorted.forEach(r => {
-    // Last index in the tied group → tied teams share the worst rank in their group
     const rankIndex = sorted.reduce((last, x, i) => x.raw_score === r.raw_score ? i : last, 0)
-    out.set(r.team_id, rankPoints(rankIndex + 1, n, game.weight, fixed))
+    out.set(r.team_id, rankPoints(rankIndex + 1, n, game.weight, true))
   })
   return out
 }
