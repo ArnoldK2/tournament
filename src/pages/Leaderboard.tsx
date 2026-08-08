@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion'
 import type { LeaderboardEntry } from '../types'
@@ -6,7 +6,6 @@ import { useStore } from '../store'
 import { supabase } from '../lib/supabase'
 import { computeLeaderboard } from '../store/scoring'
 import { exportEventData } from '../lib/exportEvent'
-import QRCode from 'qrcode'
 import ControlMenu from '../components/ControlMenu'
 import BrandLogos from '../components/BrandLogos'
 import '../styles/leaderboard.css'
@@ -77,27 +76,6 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
   )
 }
 
-function QrBadge({ editionId }: { editionId: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const generateQR = useCallback(async () => {
-    if (!canvasRef.current) return
-    const url = `${window.location.origin}/hub/${editionId}`
-    await QRCode.toCanvas(canvasRef.current, url, {
-      width: 100,
-      margin: 1,
-      color: { dark: '#ffffff', light: '#00000000' },
-    })
-  }, [editionId])
-
-  useEffect(() => { generateQR() }, [generateQR])
-
-  return (
-    <div className="bs-qr">
-      <canvas ref={canvasRef} />
-      <span className="bs-qr-label">Scan me</span>
-    </div>
-  )
-}
 
 // ── Big Screen ─────────────────────────────────────────────────
 function BigScreenLeaderboard({
@@ -107,7 +85,7 @@ function BigScreenLeaderboard({
   clientName: string
   eventName: string
   editionLabel: string
-  editionId: string
+  editionId: string  // kept for ControlMenu
   flashMessage: string | null
   role: string
 }) {
@@ -177,7 +155,7 @@ function BigScreenLeaderboard({
       )}
 
       <div className="bs-topright">
-        <QrBadge editionId={editionId} />
+        <BrandLogos variant="corner" />
         <ControlMenu editionId={editionId} currentView="bigscreen" role={role} />
       </div>
 
