@@ -88,7 +88,12 @@ export default function Progression() {
 
     const dpr = window.devicePixelRatio || 1
     const W = container.clientWidth
-    const H = container.clientHeight
+    const marginL = Math.min(140, W * 0.18)
+    const marginR = Math.min(140, W * 0.18)
+    const marginT = 60
+    const marginB = 40
+    const YSTEP = Math.min(80, Math.max(48, (W - marginL - marginR) * 0.07))
+    const H = marginT + marginB + Math.max(0, numTeams - 1) * YSTEP
     canvas.width = W * dpr
     canvas.height = H * dpr
     canvas.style.width = `${W}px`
@@ -98,15 +103,9 @@ export default function Progression() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, W, H)
 
-    const marginL = Math.min(140, W * 0.18)
-    const marginR = Math.min(140, W * 0.18)
-    const marginT = 60
-    const marginB = 40
     const chartW = W - marginL - marginR
-    const chartH = H - marginT - marginB
-
     const xStep = numGames > 1 ? chartW / (numGames - 1) : chartW / 2
-    const yStep = numTeams > 1 ? chartH / (numTeams - 1) : chartH / 2
+    const yStep = YSTEP
     const x = (gi: number) => marginL + gi * xStep
     const y = (rank: number) => marginT + (rank - 1) * yStep
 
