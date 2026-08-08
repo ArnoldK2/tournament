@@ -486,6 +486,100 @@
   .modal-btn { width: 100%; text-align: center; }
 }
 
+/* ── Game participants panel ─────────────────────────────── */
+.ws-pl-wrap {
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ws-pl-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.04);
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+.ws-pl-toggle:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.ws-pl-count {
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.45rem;
+  color: rgba(255,255,255,0.6);
+}
+.ws-pl-chevron { margin-left: auto; opacity: 0.5; font-size: 0.7rem; }
+
+.ws-pl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.6rem;
+  padding: 0.75rem;
+  background: rgba(0,0,0,0.15);
+}
+.ws-pl-team { display: flex; flex-direction: column; gap: 0.35rem; }
+.ws-pl-team-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.1rem;
+}
+.ws-pl-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ws-pl-tname {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+}
+.ws-pl-saved {
+  font-size: 0.72rem;
+  color: #4ade80;
+  margin-left: auto;
+}
+.ws-pl-inputs { display: flex; flex-direction: column; gap: 0.25rem; }
+.ws-pl-row { display: flex; align-items: center; gap: 0.25rem; }
+.ws-pl-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.5rem;
+  outline: none;
+  min-width: 0;
+}
+.ws-pl-input:focus { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.09); }
+.ws-pl-del {
+  background: none; border: none;
+  color: rgba(255,255,255,0.3);
+  font-size: 1rem; line-height: 1;
+  cursor: pointer; padding: 0 0.2rem;
+  flex-shrink: 0;
+}
+.ws-pl-del:hover { color: #f87171; }
+.ws-pl-add {
+  background: none; border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.15rem 0;
+  text-align: left;
+}
+.ws-pl-add:hover { color: rgba(255,255,255,0.7); }
+
 /* ── Game top 3 strip ────────────────────────────────────── */
 .ws-top3 {
   display: flex;

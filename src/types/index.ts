@@ -120,6 +120,14 @@ export interface BracketMatch {
   loser_bracket: boolean
 }
 
+export interface GameParticipant {
+  id: string
+  game_id: string
+  team_id: string
+  name: string
+  sort_order: number
+}
+
 export interface AudienceRegistration {
   id: string
   edition_id: string

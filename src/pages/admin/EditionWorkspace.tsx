@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
 import { computeLeaderboard } from '../../store/scoring'
 import ResultsEntry from './ResultsEntry'
-import type { Game, GameType, ScoringDirection, Team } from '../../types'
+import type { Game, GameType, ScoringDirection, Team, GameParticipant } from '../../types'
 import '../../styles/admin.css'
 import '../../styles/workspace.css'
 
@@ -36,6 +36,98 @@ function GameTop3({ game, teams, scoringMode }: { game: Game; teams: Team[]; sco
           <span className="ws-top3-name">{e.team_name}</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ── Participant name entry per team ──────────────────────────
+function TeamPlayerRow({ game, team, allParticipants, saveGameParticipants }: {
+  game: Game
+  team: Team
+  allParticipants: GameParticipant[]
+  saveGameParticipants: (gameId: string, teamId: string, names: string[]) => Promise<void>
+}) {
+  const existing = allParticipants
+    .filter(p => p.game_id === game.id && p.team_id === team.id)
+    .sort((a, b) => a.sort_order - b.sort_order)
+
+  const [names, setNames] = useState<string[]>(() => existing.length ? existing.map(p => p.name) : [''])
+  const [flash, setFlash] = useState(false)
+
+  useEffect(() => {
+    const stored = existing.map(p => p.name)
+    setNames(stored.length ? stored : [''])
+  }, [allParticipants.length, game.id, team.id])
+
+  async function doSave(current: string[]) {
+    await saveGameParticipants(game.id, team.id, current.map(n => n.trim()).filter(Boolean))
+    setFlash(true)
+    setTimeout(() => setFlash(false), 1200)
+  }
+
+  function update(i: number, val: string) {
+    setNames(prev => { const n = [...prev]; n[i] = val; return n })
+  }
+
+  function remove(i: number) {
+    const next = names.length > 1 ? names.filter((_, j) => j !== i) : ['']
+    setNames(next)
+    doSave(next)
+  }
+
+  return (
+    <div className="ws-pl-team">
+      <div className="ws-pl-team-label">
+        <span className="ws-pl-dot" style={{ background: team.color }} />
+        <span className="ws-pl-tname">{team.name.split(' ')[0]}</span>
+        {flash && <span className="ws-pl-saved">✓</span>}
+      </div>
+      <div className="ws-pl-inputs">
+        {names.map((name, i) => (
+          <div key={i} className="ws-pl-row">
+            <input
+              className="ws-pl-input"
+              value={name}
+              placeholder={`Player ${i + 1}`}
+              onChange={e => update(i, e.target.value)}
+              onBlur={() => doSave(names)}
+            />
+            <button className="ws-pl-del" onClick={() => remove(i)} tabIndex={-1}>×</button>
+          </div>
+        ))}
+        <button className="ws-pl-add" onClick={() => setNames(n => [...n, ''])}>+ player</button>
+      </div>
+    </div>
+  )
+}
+
+function GameParticipantsPanel({ game, teams }: { game: Game; teams: Team[] }) {
+  const allParticipants = useStore(s => s.gameParticipants)
+  const saveGameParticipants = useStore(s => s.saveGameParticipants)
+  const [open, setOpen] = useState(false)
+
+  const hasAny = allParticipants.some(p => p.game_id === game.id)
+
+  return (
+    <div className="ws-pl-wrap">
+      <button className="ws-pl-toggle" onClick={() => setOpen(o => !o)}>
+        <span>Players</span>
+        {hasAny && <span className="ws-pl-count">{allParticipants.filter(p => p.game_id === game.id).length}</span>}
+        <span className="ws-pl-chevron">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="ws-pl-grid">
+          {teams.map(team => (
+            <TeamPlayerRow
+              key={team.id}
+              game={game}
+              team={team}
+              allParticipants={allParticipants}
+              saveGameParticipants={saveGameParticipants}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -287,6 +379,8 @@ export default function EditionWorkspace() {
                     transition={{ duration: 0.25 }}
                   >
                     <div className="ws-panel-inner">
+                      <GameParticipantsPanel game={game} teams={teams} />
+
                       <div className="ws-panel-actions">
                         {role === 'client_admin' && (
                           <>
