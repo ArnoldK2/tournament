@@ -63,7 +63,6 @@ export default function Progression() {
 
   const edition = store.editions.find(e => e.id === editionId)
   const event = store.events.find(e => e.id === edition?.event_id)
-  const client = store.clients.find(c => c.id === event?.client_id)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
