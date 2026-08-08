@@ -49,3 +49,20 @@
   min-height: 30px;
   max-height: 54px;
 }
+
+/* ── Inline variant (flows inside a flex container) ─────── */
+.bl-inline {
+  gap: 0.5rem;
+}
+
+.bl-inline .bl-tcnoga {
+  height: 3.6vw;
+  min-height: 36px;
+  max-height: 64px;
+}
+
+.bl-inline .bl-playhouse {
+  height: 3vw;
+  min-height: 30px;
+  max-height: 54px;
+}

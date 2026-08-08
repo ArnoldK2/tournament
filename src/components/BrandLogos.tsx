@@ -1,9 +1,10 @@
 import './brand-logos.css'
 
 interface Props {
-  /** 'corner' = fixed bottom-left watermark (projection pages)
-   *  'footer' = inline centered footer (normal pages) */
-  variant?: 'corner' | 'footer'
+  /** 'corner'  = fixed bottom-left watermark (projection pages)
+   *  'footer'  = inline centered footer (normal pages)
+   *  'inline'  = flows naturally inside a flex parent (e.g. bs-topright) */
+  variant?: 'corner' | 'footer' | 'inline'
 }
 
 export default function BrandLogos({ variant = 'footer' }: Props) {

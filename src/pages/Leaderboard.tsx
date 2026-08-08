@@ -155,11 +155,9 @@ function BigScreenLeaderboard({
       )}
 
       <div className="bs-topright">
-        <BrandLogos variant="corner" />
+        <BrandLogos variant="inline" />
         <ControlMenu editionId={editionId} currentView="bigscreen" role={role} />
       </div>
-
-      <BrandLogos variant="corner" />
     </div>
   )
 }
