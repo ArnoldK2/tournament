@@ -52,27 +52,40 @@ function TeamPlayerRow({ game, team, allParticipants, saveGameParticipants }: {
     .sort((a, b) => a.sort_order - b.sort_order)
 
   const [names, setNames] = useState<string[]>(() => existing.length ? existing.map(p => p.name) : [''])
-  const [flash, setFlash] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [errMsg, setErrMsg] = useState('')
+  const [dirty, setDirty] = useState(false)
 
   useEffect(() => {
     const stored = existing.map(p => p.name)
     setNames(stored.length ? stored : [''])
+    setDirty(false)
   }, [allParticipants.length, game.id, team.id])
 
-  async function doSave(current: string[]) {
-    await saveGameParticipants(game.id, team.id, current.map(n => n.trim()).filter(Boolean))
-    setFlash(true)
-    setTimeout(() => setFlash(false), 1200)
+  async function doSave() {
+    const clean = names.map(n => n.trim()).filter(Boolean)
+    setStatus('saving')
+    setErrMsg('')
+    try {
+      await saveGameParticipants(game.id, team.id, clean)
+      setStatus('saved')
+      setDirty(false)
+      setTimeout(() => setStatus('idle'), 1500)
+    } catch (e: unknown) {
+      setStatus('error')
+      setErrMsg(e instanceof Error ? e.message : 'Save failed')
+    }
   }
 
   function update(i: number, val: string) {
     setNames(prev => { const n = [...prev]; n[i] = val; return n })
+    setDirty(true)
   }
 
   function remove(i: number) {
     const next = names.length > 1 ? names.filter((_, j) => j !== i) : ['']
     setNames(next)
-    doSave(next)
+    setDirty(true)
   }
 
   return (
@@ -80,7 +93,8 @@ function TeamPlayerRow({ game, team, allParticipants, saveGameParticipants }: {
       <div className="ws-pl-team-label">
         <span className="ws-pl-dot" style={{ background: team.color }} />
         <span className="ws-pl-tname">{team.name.split(' ')[0]}</span>
-        {flash && <span className="ws-pl-saved">✓</span>}
+        {status === 'saved' && <span className="ws-pl-saved">✓ Saved</span>}
+        {status === 'error' && <span className="ws-pl-err" title={errMsg}>✕ Error</span>}
       </div>
       <div className="ws-pl-inputs">
         {names.map((name, i) => (
@@ -90,12 +104,20 @@ function TeamPlayerRow({ game, team, allParticipants, saveGameParticipants }: {
               value={name}
               placeholder={`Player ${i + 1}`}
               onChange={e => update(i, e.target.value)}
-              onBlur={() => doSave(names)}
             />
             <button className="ws-pl-del" onClick={() => remove(i)} tabIndex={-1}>×</button>
           </div>
         ))}
-        <button className="ws-pl-add" onClick={() => setNames(n => [...n, ''])}>+ player</button>
+        <div className="ws-pl-footer">
+          <button className="ws-pl-add" onClick={() => { setNames(n => [...n, '']); setDirty(true) }}>+ player</button>
+          <button
+            className={`ws-pl-save ${dirty ? 'active' : ''}`}
+            onClick={doSave}
+            disabled={status === 'saving' || !dirty}
+          >
+            {status === 'saving' ? 'Saving…' : 'Save'}
+          </button>
+        </div>
       </div>
     </div>
   )

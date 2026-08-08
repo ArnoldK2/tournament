@@ -330,11 +330,13 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   saveGameParticipants: async (gameId, teamId, names) => {
-    await supabase.from('game_participants').delete().eq('game_id', gameId).eq('team_id', teamId)
+    const { error: delErr } = await supabase.from('game_participants').delete().eq('game_id', gameId).eq('team_id', teamId)
+    if (delErr) throw new Error(delErr.message)
     set(s => ({ gameParticipants: s.gameParticipants.filter(p => !(p.game_id === gameId && p.team_id === teamId)) }))
     if (!names.length) return
     const rows = names.map((name, i) => ({ game_id: gameId, team_id: teamId, name, sort_order: i + 1 }))
-    const { data } = await supabase.from('game_participants').insert(rows).select()
+    const { data, error: insErr } = await supabase.from('game_participants').insert(rows).select()
+    if (insErr) throw new Error(insErr.message)
     if (data) set(s => ({ gameParticipants: [...s.gameParticipants, ...data.map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, name: r.name, sort_order: r.sort_order }))] }))
   },
 

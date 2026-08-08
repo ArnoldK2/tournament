@@ -543,11 +543,8 @@
   font-weight: 600;
   color: rgba(255,255,255,0.8);
 }
-.ws-pl-saved {
-  font-size: 0.72rem;
-  color: #4ade80;
-  margin-left: auto;
-}
+.ws-pl-saved { font-size: 0.72rem; color: #4ade80; margin-left: auto; }
+.ws-pl-err   { font-size: 0.72rem; color: #f87171; margin-left: auto; cursor: help; }
 .ws-pl-inputs { display: flex; flex-direction: column; gap: 0.25rem; }
 .ws-pl-row { display: flex; align-items: center; gap: 0.25rem; }
 .ws-pl-input {
@@ -570,15 +567,32 @@
   flex-shrink: 0;
 }
 .ws-pl-del:hover { color: #f87171; }
+.ws-pl-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.15rem; }
 .ws-pl-add {
   background: none; border: none;
   color: rgba(255,255,255,0.35);
   font-size: 0.75rem;
   cursor: pointer;
   padding: 0.15rem 0;
-  text-align: left;
 }
 .ws-pl-add:hover { color: rgba(255,255,255,0.7); }
+.ws-pl-save {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 5px;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ws-pl-save.active {
+  background: rgba(99,102,241,0.25);
+  border-color: rgba(99,102,241,0.6);
+  color: #a5b4fc;
+}
+.ws-pl-save.active:hover { background: rgba(99,102,241,0.4); }
+.ws-pl-save:disabled { opacity: 0.4; cursor: default; }
 
 /* ── Game top 3 strip ────────────────────────────────────── */
 .ws-top3 {
