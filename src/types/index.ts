@@ -29,6 +29,7 @@ export interface Team {
   client_id: string
   name: string
   color: string
+  is_fun?: boolean
 }
 
 export interface Edition {
@@ -63,6 +64,7 @@ export interface Game {
   order: number
   participants_per_team?: number
   attempts_per_participant?: number
+  is_fun?: boolean
 }
 
 export interface ParticipantAttemptResult {

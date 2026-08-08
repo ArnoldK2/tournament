@@ -26,7 +26,7 @@ function lastResultTime(gameId: string, store: AppState): number {
 
 function buildFrames(editionId: string, store: AppState): Frame[] {
   const games = store.games
-    .filter(g => g.edition_id === editionId && g.status === 'completed')
+    .filter(g => g.edition_id === editionId && g.status === 'completed' && !g.is_fun)
     .sort((a, b) => {
       const ta = lastResultTime(a.id, store)
       const tb = lastResultTime(b.id, store)

@@ -27,17 +27,18 @@ export default function AdminTeams() {
   const [editId, setEditId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [color, setColor] = useState(PRESET_COLORS[0])
+  const [isFun, setIsFun] = useState(false)
 
-  function openAdd() { setEditId(null); setName(''); setColor(PRESET_COLORS[0]); setShowForm(true) }
+  function openAdd() { setEditId(null); setName(''); setColor(PRESET_COLORS[0]); setIsFun(false); setShowForm(true) }
   function openEdit(id: string) {
     const t = teams.find(t => t.id === id)
     if (!t) return
-    setEditId(id); setName(t.name); setColor(t.color); setShowForm(true)
+    setEditId(id); setName(t.name); setColor(t.color); setIsFun(t.is_fun ?? false); setShowForm(true)
   }
   function save() {
     if (!name.trim()) return
-    if (editId) updateTeam(editId, { name: name.trim(), color })
-    else addTeam({ client_id: clientId!, name: name.trim(), color })
+    if (editId) updateTeam(editId, { name: name.trim(), color, is_fun: isFun })
+    else addTeam({ client_id: clientId!, name: name.trim(), color, is_fun: isFun })
     setShowForm(false)
   }
 
@@ -58,7 +59,10 @@ export default function AdminTeams() {
           {teams.map(team => (
             <motion.div key={team.id} className="admin-list-row" layout initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} style={{ '--team-color': team.color } as React.CSSProperties}>
               <span className="alr-dot" />
-              <span className="alr-name">{team.name}</span>
+              <span className="alr-name">
+                {team.name}
+                {team.is_fun && <span className="wsgr-fun-badge">FUN</span>}
+              </span>
               <div className="alr-actions">
                 <button className="alr-btn" onClick={() => openEdit(team.id)}>Edit</button>
                 <button className="alr-btn danger" onClick={() => deleteTeam(team.id)}>Delete</button>
@@ -85,6 +89,10 @@ export default function AdminTeams() {
                   <button key={c} className={`color-swatch ${color === c ? 'selected' : ''}`} style={{ background: c }} onClick={() => setColor(c)} />
                 ))}
               </div>
+              <label className="modal-label" style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={isFun} onChange={e => setIsFun(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#a78bfa', cursor: 'pointer' }} />
+                <span>Fun team <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>— not included in leaderboard</span></span>
+              </label>
               <div className="modal-actions">
                 <button className="modal-btn secondary" onClick={() => setShowForm(false)}>Cancel</button>
                 <button className="modal-btn primary" onClick={save} disabled={!name.trim()}>{editId ? 'Save' : 'Add Team'}</button>

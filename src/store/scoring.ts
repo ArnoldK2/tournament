@@ -111,9 +111,10 @@ function computeBracket(game: Game, teams: Team[], matches: BracketMatch[], fixe
 }
 
 export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
-  const { games, teams } = data
+  const { games } = data
+  const teams = data.teams.filter(t => !t.is_fun)
   const fixed = data.scoringMode === 'fixed'
-  const scorableGames = games.filter(g => g.status !== 'pending')
+  const scorableGames = games.filter(g => g.status !== 'pending' && !g.is_fun)
   const teamScores = new Map<string, { game_id: string; game_name: string; score: number }[]>()
   for (const team of teams) teamScores.set(team.id, [])
 

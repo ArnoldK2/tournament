@@ -191,6 +191,7 @@ export default function EditionWorkspace() {
     [allGames, editionId]
   )
   const teams = useMemo(() => allTeams.filter(t => t.client_id === clientId), [allTeams, clientId])
+  const gameParticipants = useStore(s => s.gameParticipants)
 
   // Previous edition of same event (for copy)
   const prevEdition = useMemo(() => {
@@ -216,6 +217,7 @@ export default function EditionWorkspace() {
   const [direction, setDirection] = useState<ScoringDirection>('lower_is_better')
   const [weight, setWeight] = useState(1)
   const [gameStatus, setGameStatus] = useState<'pending' | 'active' | 'completed'>('pending')
+  const [isFunGame, setIsFunGame] = useState(false)
   const [participantsPerTeam, setParticipantsPerTeam] = useState(1)
   const [attemptsPerParticipant, setAttemptsPerParticipant] = useState(1)
 
@@ -224,13 +226,14 @@ export default function EditionWorkspace() {
   function openAddGame() {
     setEditingGame(null); setGameName(''); setGameType('standard')
     setDirection('lower_is_better'); setWeight(1); setGameStatus('pending')
-    setParticipantsPerTeam(1); setAttemptsPerParticipant(1)
+    setIsFunGame(false); setParticipantsPerTeam(1); setAttemptsPerParticipant(1)
     setShowGameForm(true)
   }
 
   function openEditGame(g: Game) {
     setEditingGame(g); setGameName(g.name); setGameType(g.type)
     setDirection(g.scoring_direction); setWeight(g.weight); setGameStatus(g.status)
+    setIsFunGame(g.is_fun ?? false)
     setParticipantsPerTeam(g.participants_per_team ?? 1)
     setAttemptsPerParticipant(g.attempts_per_participant ?? 1)
     setShowGameForm(true)
@@ -241,7 +244,7 @@ export default function EditionWorkspace() {
     const base = {
       edition_id: editionId!, name: gameName.trim(), type: gameType,
       scoring_direction: gameType === 'participant_attempts' ? 'higher_is_better' as const : direction,
-      weight, status: gameStatus,
+      weight, status: gameStatus, is_fun: isFunGame,
       ...(gameType === 'participant_attempts' ? { participants_per_team: participantsPerTeam, attempts_per_participant: attemptsPerParticipant } : {}),
     }
     if (editingGame) updateGame(editingGame.id, base)
@@ -378,7 +381,10 @@ export default function EditionWorkspace() {
                 <div className="wsgr-left">
                   <span className={`status-dot dot-${game.status}`} />
                   <div className="wsgr-info">
-                    <span className="wsgr-name">{game.name}</span>
+                    <span className="wsgr-name">
+                      {game.name}
+                      {game.is_fun && <span className="wsgr-fun-badge">FUN</span>}
+                    </span>
                     <span className="wsgr-type">
                       {GAME_TYPES.find(t => t.value === game.type)?.label}
                       {game.weight !== 1 && ` · ${game.weight}×`}
@@ -386,6 +392,11 @@ export default function EditionWorkspace() {
                   </div>
                 </div>
                 <div className="wsgr-right">
+                  {gameParticipants.some(p => p.game_id === game.id) && (
+                    <span className="wsgr-players-badge">
+                      👤 {gameParticipants.filter(p => p.game_id === game.id).length}
+                    </span>
+                  )}
                   <span className={`status-chip status-${game.status}`}>{game.status}</span>
                   <span className="wsgr-chevron">{activeGameId === game.id ? '▲' : '▼'}</span>
                 </div>
@@ -598,6 +609,11 @@ export default function EditionWorkspace() {
               {editingGame?.status === 'completed' && gameStatus === 'pending' && (
                 <p className="reopen-warning">⚠ Setting to pending removes this game from the leaderboard until it is active or completed again.</p>
               )}
+
+              <label className="modal-label" style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={isFunGame} onChange={e => setIsFunGame(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#a78bfa', cursor: 'pointer' }} />
+                <span>Fun game <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>— results not counted in leaderboard</span></span>
+              </label>
 
               <div className="modal-actions">
                 <button className="modal-btn secondary" onClick={() => setShowGameForm(false)}>Cancel</button>
