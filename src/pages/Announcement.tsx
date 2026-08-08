@@ -116,7 +116,7 @@ function RevealCard({ entry }: { entry: LeaderboardEntry }) {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 180, damping: 18, mass: 0.8 }}
     >
-      <h2 className="ann-reveal-name">{entry.team_name}</h2>
+      <h2 className="ann-reveal-name" style={{ color: entry.team_color }}>{entry.team_name}</h2>
       <span className="ann-reveal-meta">
         {ordinal(entry.rank).toUpperCase()} PLACE &nbsp;·&nbsp; {entry.total_score} pts
       </span>
@@ -281,6 +281,7 @@ export default function Announcement() {
 
           <motion.h1
             className="ann-winner-name"
+            style={{ color: winner.team_color }}
             initial={{ scale: 2.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.5, type: 'spring', stiffness: 180, damping: 16 }}
@@ -290,8 +291,9 @@ export default function Announcement() {
 
           <motion.p
             className="ann-winner-score"
+            style={{ color: winner.team_color, opacity: 0.85 }}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 0.85, y: 0 }}
             transition={{ delay: 1 }}
           >
             {winner.total_score} points
