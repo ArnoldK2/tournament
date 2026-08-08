@@ -311,12 +311,8 @@ export default function Leaderboard() {
     )
   }
 
-  const backDest = currentRole === 'guest' ? `/hub/${editionId}` : '/'
-
   return (
     <div className="lb-root">
-      <button className="lb-back" onClick={() => navigate(backDest)}>← Back</button>
-
       <ControlMenu
         editionId={editionId!}
         currentView="leaderboard"
