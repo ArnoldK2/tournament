@@ -486,6 +486,17 @@
   .modal-btn { width: 100%; text-align: center; }
 }
 
+/* ── Reopen warning ──────────────────────────────────────── */
+.reopen-warning {
+  font-size: 0.8rem;
+  color: #fbbf24;
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.25);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.4rem;
+}
+
 /* ── Participant Attempts ─────────────────────────────────── */
 .re-attempt-team {
   background: rgba(255,255,255,0.03);

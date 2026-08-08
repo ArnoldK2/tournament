@@ -59,6 +59,7 @@ export default function EditionWorkspace() {
   const [showClearModal, setShowClearModal] = useState(false)
   const [clearConfirm, setClearConfirm] = useState('')
   const [clearing, setClearing] = useState(false)
+  const [reopenGameId, setReopenGameId] = useState<string | null>(null)
 
   // Game form state
   const [gameName, setGameName] = useState('')
@@ -260,7 +261,10 @@ export default function EditionWorkspace() {
                         )}
                         <button
                           className={`alr-btn ${game.status === 'active' ? 'success' : ''}`}
-                          onClick={() => updateGame(game.id, { status: game.status === 'pending' ? 'active' : game.status === 'active' ? 'completed' : 'pending' })}
+                          onClick={() => {
+                            if (game.status === 'completed') { setReopenGameId(game.id); return }
+                            updateGame(game.id, { status: game.status === 'pending' ? 'active' : 'completed' })
+                          }}
                         >
                           {game.status === 'pending' ? '▶ Start' : game.status === 'active' ? '✓ Complete' : '↩ Reopen'}
                         </button>
@@ -277,6 +281,44 @@ export default function EditionWorkspace() {
       </div>
 
       {/* Game form bottom sheet */}
+      {/* ── Reopen Game Modal ── */}
+      <AnimatePresence>
+        {reopenGameId && (
+          <motion.div
+            className="modal-backdrop"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setReopenGameId(null)}
+          >
+            <motion.div
+              className="modal-card"
+              initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={e => e.stopPropagation()}
+              style={{ maxWidth: 400 }}
+            >
+              <p className="modal-title">↩ Reopen Game</p>
+              <p className="modal-label" style={{ marginBottom: '1rem' }}>
+                How do you want to reopen <strong>{games.find(g => g.id === reopenGameId)?.name}</strong>?
+              </p>
+              <button
+                className="modal-btn primary"
+                style={{ width: '100%', marginBottom: '0.6rem' }}
+                onClick={() => { updateGame(reopenGameId, { status: 'active' }); setReopenGameId(null) }}
+              >
+                ▶ Active — results still count toward leaderboard
+              </button>
+              <button
+                className="modal-btn"
+                style={{ width: '100%', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', color: '#f87171' }}
+                onClick={() => { updateGame(reopenGameId, { status: 'pending' }); setReopenGameId(null) }}
+              >
+                ⏸ Pending — removes this game from the leaderboard
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Clear Results Modal (super_admin only) ── */}
       <AnimatePresence>
         {showClearModal && (
@@ -398,6 +440,9 @@ export default function EditionWorkspace() {
                   <button key={s} className={`direction-btn ${gameStatus === s ? 'selected' : ''}`} onClick={() => setGameStatus(s)}>{s}</button>
                 ))}
               </div>
+              {editingGame?.status === 'completed' && gameStatus === 'pending' && (
+                <p className="reopen-warning">⚠ Setting to pending removes this game from the leaderboard until it is active or completed again.</p>
+              )}
 
               <div className="modal-actions">
                 <button className="modal-btn secondary" onClick={() => setShowGameForm(false)}>Cancel</button>
