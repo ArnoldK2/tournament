@@ -20,12 +20,7 @@ export default function Register() {
   const houses = useMemo(() => teams.filter(t => t.client_id === client?.id), [teams, client])
 
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
   const [house, setHouse] = useState('')
-  const [yearFrom, setYearFrom] = useState('')
-  const [yearTo, setYearTo] = useState('')
-  const [role, setRole] = useState<'participating' | 'cheerleading'>('cheerleading')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
@@ -43,12 +38,11 @@ export default function Register() {
     ? 'in_person'
     : 'online'
 
-  // Share link for online followers — no ?source param so it routes as 'online'
   const shareUrl = `${window.location.origin}/register/${editionId}`
   const shareText = `Follow the ${event.name} live leaderboard! Register here:`
 
   async function handleShare() {
-    if (navigator.share) {
+    if ('share' in navigator) {
       try {
         await navigator.share({ title: event!.name, text: shareText, url: shareUrl })
         return
@@ -70,12 +64,7 @@ export default function Register() {
     const { error: err } = await supabase.from('audience_registrations').insert({
       edition_id: editionId,
       name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
       house,
-      year_from: yearFrom ? parseInt(yearFrom) : null,
-      year_to: yearTo ? parseInt(yearTo) : null,
-      role,
       source,
     })
 
@@ -155,24 +144,6 @@ export default function Register() {
           required
         />
 
-        <label className="aud-label">Email</label>
-        <input
-          className="aud-input"
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="email@example.com"
-        />
-
-        <label className="aud-label">Phone</label>
-        <input
-          className="aud-input"
-          type="tel"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          placeholder="+256 ..."
-        />
-
         <label className="aud-label">House</label>
         <div className="aud-houses">
           {houses.map(h => (
@@ -186,49 +157,6 @@ export default function Register() {
               {h.name}
             </button>
           ))}
-        </div>
-
-        <label className="aud-label">Years at school</label>
-        <div className="aud-year-range">
-          <input
-            className="aud-input"
-            type="number"
-            inputMode="numeric"
-            min={1900}
-            max={2100}
-            value={yearFrom}
-            onChange={e => setYearFrom(e.target.value)}
-            placeholder="From (e.g. 2010)"
-          />
-          <span className="aud-year-sep">–</span>
-          <input
-            className="aud-input"
-            type="number"
-            inputMode="numeric"
-            min={1900}
-            max={2100}
-            value={yearTo}
-            onChange={e => setYearTo(e.target.value)}
-            placeholder="To (e.g. 2015)"
-          />
-        </div>
-
-        <label className="aud-label">I am...</label>
-        <div className="aud-role-group">
-          <button
-            type="button"
-            className={`aud-role-btn ${role === 'participating' ? 'active' : ''}`}
-            onClick={() => setRole('participating')}
-          >
-            Participating
-          </button>
-          <button
-            type="button"
-            className={`aud-role-btn ${role === 'cheerleading' ? 'active' : ''}`}
-            onClick={() => setRole('cheerleading')}
-          >
-            Cheerleading
-          </button>
         </div>
 
         {error && <p className="aud-error">{error}</p>}

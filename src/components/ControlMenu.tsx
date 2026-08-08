@@ -36,6 +36,8 @@ export default function ControlMenu({ editionId, currentView, role, newTab = fal
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
 
+  if (role === 'guest') return null
+
   function go(path: string) {
     setOpen(false)
     if (newTab) {
@@ -45,7 +47,7 @@ export default function ControlMenu({ editionId, currentView, role, newTab = fal
     }
   }
 
-  const isAdmin = role !== 'guest'
+  const isAdmin = role === 'client_admin' || role === 'super_admin'
 
   return (
     <div className="cm-wrap">

@@ -133,6 +133,6 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
     game_scores: teamScores.get(team.id)!,
   }))
 
-  entries.sort((a, b) => b.total_score - a.total_score)
+  entries.sort((a, b) => b.total_score - a.total_score || a.team_name.localeCompare(b.team_name))
   return entries.map((e, i) => ({ ...e, rank: i + 1 }))
 }
