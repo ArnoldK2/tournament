@@ -72,6 +72,7 @@ export interface ParticipantAttemptResult {
   participant_name: string
   attempt_number: number
   success: boolean
+  created_at?: string
 }
 
 export interface StandardResult {
@@ -79,6 +80,7 @@ export interface StandardResult {
   game_id: string
   team_id: string
   position: number
+  created_at?: string
 }
 
 export interface PointsResult {
@@ -86,6 +88,7 @@ export interface PointsResult {
   game_id: string
   team_id: string
   raw_score: number
+  created_at?: string
 }
 
 export interface ParticipantResult {
@@ -94,6 +97,7 @@ export interface ParticipantResult {
   team_id: string
   participant_name: string
   position: number
+  created_at?: string
 }
 
 export interface CumulativeRound {

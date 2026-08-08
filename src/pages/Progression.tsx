@@ -12,10 +12,27 @@ interface Frame {
   teams: { teamId: string; teamName: string; rank: number; cumulativeScore: number }[]
 }
 
+function lastResultTime(gameId: string, store: AppState): number {
+  const ts: number[] = []
+  const push = (r: { game_id: string; created_at?: string }) => {
+    if (r.game_id === gameId && r.created_at) ts.push(new Date(r.created_at).getTime())
+  }
+  store.standardResults.forEach(push)
+  store.pointsResults.forEach(push)
+  store.participantResults.forEach(push)
+  store.participantAttemptResults.forEach(push)
+  return ts.length ? Math.max(...ts) : Infinity
+}
+
 function buildFrames(editionId: string, store: AppState): Frame[] {
   const games = store.games
     .filter(g => g.edition_id === editionId && g.status === 'completed')
-    .sort((a, b) => a.order - b.order)
+    .sort((a, b) => {
+      const ta = lastResultTime(a.id, store)
+      const tb = lastResultTime(b.id, store)
+      if (ta !== tb) return ta - tb
+      return a.order - b.order  // fallback to intended order if timestamps match
+    })
   const edition = store.editions.find(e => e.id === editionId)
   const event = store.events.find(e => e.id === edition?.event_id)
   const client = store.clients.find(c => c.id === event?.client_id)
