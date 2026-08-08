@@ -415,7 +415,7 @@ export default function EditionWorkspace() {
                       <GameParticipantsPanel game={game} teams={teams} />
 
                       <div className="ws-panel-actions">
-                        {role === 'client_admin' && (
+                        {(role === 'client_admin' || role === 'super_admin') && (
                           <>
                             <button className="alr-btn" onClick={() => openEditGame(game)}>Edit game</button>
                             <button className="alr-btn danger" onClick={() => { deleteGame(game.id); setActiveGameId(null) }}>Delete</button>
