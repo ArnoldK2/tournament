@@ -188,7 +188,7 @@ export default function ResultsEntry({ game, clientId }: Props) {
         <div className="re-locked">
           <span className="re-locked-icon">🔒</span>
           <p className="re-locked-text">Results submitted &amp; locked</p>
-          <p className="re-locked-hint">Change game status to Pending or Active in the workspace to re-enter.</p>
+          <p className="re-locked-hint">Click the ↩ Reopen button above to edit results.</p>
         </div>
       </div>
     )
