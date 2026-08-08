@@ -62,6 +62,7 @@ interface AppState {
   deleteUser: (id: string) => Promise<void>
 
   refreshEditionResults: (editionId: string) => Promise<void>
+  clearEditionResults: (editionId: string) => Promise<void>
   logAudit: (action: string, gameId: string, gameName: string, details?: object) => Promise<void>
 }
 
@@ -380,6 +381,33 @@ export const useStore = create<AppState>((set, get) => ({
         ...s.games.filter(g => g.edition_id !== editionId),
         ...(gm ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1 })),
       ],
+    }))
+  },
+
+  clearEditionResults: async (editionId) => {
+    const gameIds = get().games
+      .filter(g => g.edition_id === editionId)
+      .map(g => g.id)
+    if (gameIds.length === 0) return
+
+    await Promise.all([
+      supabase.from('standard_results').delete().in('game_id', gameIds),
+      supabase.from('points_results').delete().in('game_id', gameIds),
+      supabase.from('participant_results').delete().in('game_id', gameIds),
+      supabase.from('participant_attempt_results').delete().in('game_id', gameIds),
+      supabase.from('cumulative_rounds').delete().in('game_id', gameIds),
+      supabase.from('bracket_matches').delete().in('game_id', gameIds),
+      supabase.from('games').update({ status: 'pending' }).in('id', gameIds),
+    ])
+
+    set(s => ({
+      standardResults: s.standardResults.filter(r => !gameIds.includes(r.game_id)),
+      pointsResults: s.pointsResults.filter(r => !gameIds.includes(r.game_id)),
+      participantResults: s.participantResults.filter(r => !gameIds.includes(r.game_id)),
+      participantAttemptResults: s.participantAttemptResults.filter(r => !gameIds.includes(r.game_id)),
+      cumulativeRounds: s.cumulativeRounds.filter(r => !gameIds.includes(r.game_id)),
+      bracketMatches: s.bracketMatches.filter(m => !gameIds.includes(m.game_id)),
+      games: s.games.map(g => gameIds.includes(g.id) ? { ...g, status: 'pending' as const } : g),
     }))
   },
 

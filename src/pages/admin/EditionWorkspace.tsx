@@ -33,6 +33,7 @@ export default function EditionWorkspace() {
   const updateGame = useStore(s => s.updateGame)
   const deleteGame = useStore(s => s.deleteGame)
   const copyGamesToEdition = useStore(s => s.copyGamesToEdition)
+  const clearEditionResults = useStore(s => s.clearEditionResults)
 
   const edition = editions.find(e => e.id === editionId)
   const event = events.find(e => e.id === edition?.event_id)
@@ -55,6 +56,9 @@ export default function EditionWorkspace() {
   const [activeGameId, setActiveGameId] = useState<string | null>(null)
   const [showGameForm, setShowGameForm] = useState(false)
   const [editingGame, setEditingGame] = useState<Game | null>(null)
+  const [showClearModal, setShowClearModal] = useState(false)
+  const [clearConfirm, setClearConfirm] = useState('')
+  const [clearing, setClearing] = useState(false)
 
   // Game form state
   const [gameName, setGameName] = useState('')
@@ -147,6 +151,15 @@ export default function EditionWorkspace() {
               title="Toggle scoring mode"
             >
               {(edition.scoring_mode ?? 'dynamic') === 'fixed' ? '★ Fixed Pts' : '○ Dynamic'}
+            </button>
+          )}
+          {role === 'super_admin' && (
+            <button
+              className="icon-btn danger-btn"
+              onClick={() => { setClearConfirm(''); setShowClearModal(true) }}
+              title="Clear all results"
+            >
+              ⚠
             </button>
           )}
           <button className="icon-btn" onClick={() => navigate(`/leaderboard/${editionId}`)} title="View leaderboard">↗</button>
@@ -264,6 +277,58 @@ export default function EditionWorkspace() {
       </div>
 
       {/* Game form bottom sheet */}
+      {/* ── Clear Results Modal (super_admin only) ── */}
+      <AnimatePresence>
+        {showClearModal && (
+          <motion.div
+            className="modal-backdrop"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => !clearing && setShowClearModal(false)}
+          >
+            <motion.div
+              className="modal-card"
+              initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={e => e.stopPropagation()}
+              style={{ maxWidth: 420 }}
+            >
+              <p className="modal-title" style={{ color: '#ef4444' }}>⚠ Clear All Results</p>
+              <p className="modal-label" style={{ marginBottom: '0.4rem' }}>
+                This will permanently delete every result and reset all games to <strong>pending</strong> for <strong>{edition.label}</strong>.
+              </p>
+              <p className="modal-label" style={{ marginBottom: '1rem', opacity: 0.7 }}>
+                Type <strong>RESET</strong> to confirm.
+              </p>
+              <input
+                className="modal-input"
+                value={clearConfirm}
+                onChange={e => setClearConfirm(e.target.value)}
+                placeholder="RESET"
+                autoFocus
+              />
+              <div className="modal-actions">
+                <button className="modal-btn secondary" onClick={() => setShowClearModal(false)} disabled={clearing}>
+                  Cancel
+                </button>
+                <button
+                  className="modal-btn danger"
+                  disabled={clearConfirm !== 'RESET' || clearing}
+                  onClick={async () => {
+                    setClearing(true)
+                    await clearEditionResults(editionId!)
+                    setClearing(false)
+                    setShowClearModal(false)
+                    setStatusFilter('pending')
+                  }}
+                >
+                  {clearing ? 'Clearing…' : 'Clear All Results'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {showGameForm && (
           <motion.div className="admin-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowGameForm(false)}>

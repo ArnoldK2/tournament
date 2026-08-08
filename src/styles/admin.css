@@ -590,6 +590,15 @@
   color: var(--admin-sub);
 }
 .modal-btn.secondary:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+.modal-btn.danger {
+  background: #ef4444;
+  border: none;
+  color: #fff;
+}
+.modal-btn.danger:hover:not(:disabled) { background: #dc2626; }
+.modal-btn.danger:disabled { opacity: 0.4; cursor: not-allowed; }
+.danger-btn { color: #ef4444 !important; border-color: rgba(239,68,68,0.3) !important; }
+.danger-btn:hover { background: rgba(239,68,68,0.12) !important; color: #f87171 !important; }
 
 /* ── Login text fields ──────────────────────────────────── */
 .al-field-label {
