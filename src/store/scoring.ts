@@ -38,7 +38,8 @@ function computePoints(game: Game, teams: Team[], results: PointsResult[], fixed
   )
   const n = teams.length
   sorted.forEach(r => {
-    const rankIndex = sorted.findIndex(x => x.raw_score === r.raw_score)
+    // Last index in the tied group → tied teams share the worst rank in their group
+    const rankIndex = sorted.reduce((last, x, i) => x.raw_score === r.raw_score ? i : last, 0)
     out.set(r.team_id, rankPoints(rankIndex + 1, n, game.weight, fixed))
   })
   return out
