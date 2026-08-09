@@ -162,6 +162,28 @@
 .wsgr-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wsgr-type { font-size: 0.72rem; color: var(--admin-sub); }
 .wsgr-chevron { font-size: 0.65rem; color: var(--admin-sub); }
+
+.wsgr-fun-badge {
+  display: inline-block;
+  margin-left: 0.45rem;
+  background: rgba(167,139,250,0.18);
+  color: #a78bfa;
+  border: 1px solid rgba(167,139,250,0.35);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.05rem 0.35rem;
+  vertical-align: middle;
+}
+
+.wsgr-players-badge {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.07);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+}
 .wsgr-fun-badge {
   display: inline-block;
   font-size: 0.62rem;

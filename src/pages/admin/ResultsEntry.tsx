@@ -85,7 +85,10 @@ export default function ResultsEntry({ game, clientId }: Props) {
   const updateGame = useStore(s => s.updateGame)
   const logAudit = useStore(s => s.logAudit)
 
-  const teams = useMemo(() => allTeams.filter(t => t.client_id === clientId), [allTeams, clientId])
+  const teams = useMemo(
+    () => allTeams.filter(t => t.client_id === clientId && !!t.is_fun === !!game.is_fun),
+    [allTeams, clientId, game.is_fun]
+  )
 
   const [positions, setPositions] = useState<Record<string, string>>(() => {
     const existing = standardResults.filter(r => r.game_id === game.id)
