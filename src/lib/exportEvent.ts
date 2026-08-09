@@ -5,7 +5,7 @@ import type {
   Client, TournamentEvent, Edition, Team, Game,
   StandardResult, PointsResult, ParticipantResult, ParticipantAttemptResult,
   CumulativeRound, BracketMatch, AudienceRegistration, Feedback,
-  LeaderboardEntry,
+  LeaderboardEntry, GameParticipant,
 } from '../types'
 
 interface ExportData {
@@ -20,6 +20,7 @@ interface ExportData {
   participantAttemptResults: ParticipantAttemptResult[]
   cumulativeRounds: CumulativeRound[]
   bracketMatches: BracketMatch[]
+  gameParticipants: GameParticipant[]
   leaderboard: LeaderboardEntry[]
   registrations: AudienceRegistration[]
   feedback: Feedback[]
@@ -38,15 +39,19 @@ async function fetchExportData(
     participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
   })
 
-  const [{ data: regs }, { data: fb }] = await Promise.all([
+  const gameIds = games.map(g => g.id)
+  const [{ data: regs }, { data: fb }, { data: gp }] = await Promise.all([
     supabase.from('audience_registrations').select('*').eq('edition_id', edition.id).order('created_at'),
     supabase.from('feedback').select('*').eq('edition_id', edition.id).order('created_at'),
+    supabase.from('game_participants').select('*').in('game_id', gameIds).order('sort_order'),
   ])
 
   return {
     client, event, edition, teams, games,
     standardResults, pointsResults, participantResults, participantAttemptResults,
-    cumulativeRounds, bracketMatches, leaderboard,
+    cumulativeRounds, bracketMatches,
+    gameParticipants: (gp ?? []) as GameParticipant[],
+    leaderboard,
     registrations: (regs ?? []) as AudienceRegistration[],
     feedback: (fb ?? []) as Feedback[],
   }
@@ -99,7 +104,8 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
   // ── 3. Game Results ─────────────────────────────────
   const grRows: (string | number)[][] = []
   for (const game of d.games.sort((a, b) => a.order - b.order)) {
-    grRows.push([game.name, `Type: ${game.type}`, `Status: ${game.status}`, `Weight: ${game.weight}`])
+    const funLabel = game.is_fun ? ' [FUN]' : ''
+    grRows.push([`${game.name}${funLabel}`, `Type: ${game.type}`, `Status: ${game.status}`, `Weight: ${game.weight}`])
 
     if (game.type === 'standard') {
       grRows.push(['Team', 'Position'])
@@ -119,12 +125,19 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
         .filter(r => r.game_id === game.id)
         .sort((a, b) => a.position - b.position)
         .forEach(r => grRows.push([teamName(r.team_id), r.participant_name || '(unnamed)', r.position]))
+    } else if (game.type === 'participant_attempts') {
+      grRows.push(['Team', 'Participant', 'Attempt', 'Result'])
+      d.participantAttemptResults
+        .filter(r => r.game_id === game.id)
+        .sort((a, b) => teamName(a.team_id).localeCompare(teamName(b.team_id)) || a.attempt_number - b.attempt_number)
+        .forEach(r => grRows.push([teamName(r.team_id), r.participant_name || '(unnamed)', r.attempt_number, r.success ? 'Hit' : 'Miss']))
     } else if (game.type === 'cumulative') {
       const rounds = d.cumulativeRounds.filter(r => r.game_id === game.id).sort((a, b) => a.round_number - b.round_number)
-      grRows.push(['Round', ...d.teams.map(t => t.name)])
+      const gameTeams = d.teams.filter(t => !!t.is_fun === !!game.is_fun)
+      grRows.push(['Round', ...gameTeams.map(t => t.name)])
       for (const round of rounds) {
         const row: (string | number)[] = [`Round ${round.round_number}`]
-        for (const team of d.teams) {
+        for (const team of gameTeams) {
           const s = round.scores.find((sc: { team_id: string; score: number }) => sc.team_id === team.id)
           row.push(s ? s.score : 0)
         }
@@ -135,10 +148,24 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
     grRows.push([])
   }
   const grSheet = XLSX.utils.aoa_to_sheet(grRows)
-  grSheet['!cols'] = [{ wch: 24 }, { wch: 22 }, { wch: 14 }, { wch: 14 }]
+  grSheet['!cols'] = [{ wch: 28 }, { wch: 22 }, { wch: 14 }, { wch: 14 }]
   XLSX.utils.book_append_sheet(wb, grSheet, 'Game Results')
 
-  // ── 4. Audience ─────────────────────────────────────
+  // ── 4. Game Participants ─────────────────────────────
+  if (d.gameParticipants.length > 0) {
+    const gpRows: (string | number)[][] = [['Game', 'Team', 'Player', 'Order']]
+    for (const game of d.games.sort((a, b) => a.order - b.order)) {
+      const entries = d.gameParticipants
+        .filter(p => p.game_id === game.id)
+        .sort((a, b) => teamName(a.team_id).localeCompare(teamName(b.team_id)) || a.sort_order - b.sort_order)
+      entries.forEach(p => gpRows.push([game.name, teamName(p.team_id), p.name, p.sort_order]))
+    }
+    const gpSheet = XLSX.utils.aoa_to_sheet(gpRows)
+    gpSheet['!cols'] = [{ wch: 28 }, { wch: 22 }, { wch: 24 }, { wch: 8 }]
+    XLSX.utils.book_append_sheet(wb, gpSheet, 'Game Participants')
+  }
+
+  // ── 5. Audience ─────────────────────────────────────
   const audHeader = ['Name', 'Email', 'Phone', 'House', 'Year From', 'Year To', 'Role', 'Source', 'Registered At']
   const audRows = d.registrations.map(r => [
     r.name, r.email, r.phone, r.house,
@@ -149,7 +176,7 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
   audSheet['!cols'] = [{ wch: 22 }, { wch: 26 }, { wch: 16 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 22 }]
   XLSX.utils.book_append_sheet(wb, audSheet, 'Audience')
 
-  // ── 5. Audience Analysis ────────────────────────────
+  // ── 6. Audience Analysis ────────────────────────────
   const analysisRows: (string | number)[][] = [
     ['Audience Breakdown'],
     [],
@@ -187,7 +214,7 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
   analysisSheet['!cols'] = [{ wch: 22 }, { wch: 14 }]
   XLSX.utils.book_append_sheet(wb, analysisSheet, 'Audience Analysis')
 
-  // ── 6. Feedback ─────────────────────────────────────
+  // ── 7. Feedback ─────────────────────────────────────
   if (d.feedback.length > 0) {
     const fbHeader = ['Name', 'Feedback', 'Submitted At']
     const fbRows = d.feedback.map(f => [
