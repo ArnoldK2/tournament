@@ -243,6 +243,6 @@ export async function exportEventData(
     cumulativeRounds, bracketMatches,
   )
   const wb = buildWorkbook(data)
-  const filename = `${event.name} - ${edition.label}.xlsx`.replace(/[/\\?%*:|"<>]/g, '-')
+  const filename = `${client.name} - ${event.name} - ${edition.label} (${edition.date}).xlsx`.replace(/[/\\?%*:|"<>]/g, '-')
   XLSX.writeFile(wb, filename)
 }
