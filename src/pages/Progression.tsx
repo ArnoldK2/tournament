@@ -40,7 +40,6 @@ function buildFrames(editionId: string, store: AppState): Frame[] {
     })
   const edition = store.editions.find(e => e.id === editionId)
   const event = store.events.find(e => e.id === edition?.event_id)
-  const client = store.clients.find(c => c.id === event?.client_id)
   const teams = store.teams.filter(t => t.event_id === event?.id)
   if (!games.length || !teams.length) return []
 

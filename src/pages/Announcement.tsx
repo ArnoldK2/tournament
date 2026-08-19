@@ -144,7 +144,7 @@ export default function Announcement() {
   const edition = editions.find(e => e.id === editionId)
   const event = events.find(e => e.id === edition?.event_id)
   const client = clients.find(c => c.id === event?.client_id)
-  const teams = useMemo(() => allTeams.filter(t => t.client_id === client?.id), [allTeams, client])
+  const teams = useMemo(() => allTeams.filter(t => t.event_id === event?.id), [allTeams, event])
   const games = useMemo(
     () => allGames.filter(g => g.edition_id === editionId).sort((a, b) => a.order - b.order),
     [allGames, editionId]

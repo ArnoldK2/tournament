@@ -189,10 +189,8 @@ export default function EditionWorkspace() {
   const allEditions = useStore(s => s.editions)
   const allTeams = useStore(s => s.teams)
   const role = useStore(s => s.currentRole)
-  const updateEdition = useStore(s => s.updateEdition)
   const addGame = useStore(s => s.addGame)
   const updateGame = useStore(s => s.updateGame)
-  const deleteGame = useStore(s => s.deleteGame)
   const copyGamesToEdition = useStore(s => s.copyGamesToEdition)
   const clearEditionResults = useStore(s => s.clearEditionResults)
 

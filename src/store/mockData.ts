@@ -5,16 +5,16 @@ import type {
 } from '../types'
 
 export const USERS: User[] = [
-  { id: 'u0', client_id: null, username: '0785805056', pin: '0701418644', role: 'super_admin', display_name: 'Super Admin' },
-  { id: 'u1', client_id: 'c1', username: 'nabbingo_admin', pin: '1234', role: 'client_admin', display_name: 'Nabbingo Admin' },
-  { id: 'u2', client_id: 'c1', username: 'nabbingo_dc', pin: '0000', role: 'data_collector', display_name: 'Nabbingo Collector' },
-  { id: 'u3', client_id: 'c2', username: 'waga_admin', pin: '4321', role: 'client_admin', display_name: 'Waga Admin' },
-  { id: 'u4', client_id: 'c2', username: 'waga_dc', pin: '1111', role: 'data_collector', display_name: 'Waga Collector' },
+  { id: 'u0', organization_id: null, username: '0785805056', pin: '0701418644', role: 'super_admin', display_name: 'Super Admin' },
+  { id: 'u1', organization_id: 'o1', username: 'nabbingo_admin', pin: '1234', role: 'client_admin', display_name: 'Nabbingo Admin' },
+  { id: 'u2', organization_id: 'o1', username: 'nabbingo_dc', pin: '0000', role: 'data_collector', display_name: 'Nabbingo Collector' },
+  { id: 'u3', organization_id: 'o2', username: 'waga_admin', pin: '4321', role: 'client_admin', display_name: 'Waga Admin' },
+  { id: 'u4', organization_id: 'o2', username: 'waga_dc', pin: '1111', role: 'data_collector', display_name: 'Waga Collector' },
 ]
 
 export const CLIENTS: Client[] = [
-  { id: 'c1', name: 'Nabbingo Old Girls Association', slug: 'nabbingo', logo_color: '#a855f7' },
-  { id: 'c2', name: 'Waga Staff', slug: 'waga', logo_color: '#f97316' },
+  { id: 'c1', organization_id: 'o1', name: 'Nabbingo Old Girls Association', slug: 'nabbingo', logo_color: '#a855f7' },
+  { id: 'c2', organization_id: 'o2', name: 'Waga Staff', slug: 'waga', logo_color: '#f97316' },
 ]
 
 export const EVENTS: TournamentEvent[] = [
@@ -22,15 +22,14 @@ export const EVENTS: TournamentEvent[] = [
   { id: 'e2', client_id: 'c2', name: 'Waga Olympics', description: 'Staff fun games day' },
 ]
 
-// Teams now belong to the CLIENT
 export const TEAMS: Team[] = [
-  { id: 't1', client_id: 'c1', name: 'House Nile',     color: '#06b6d4' },
-  { id: 't2', client_id: 'c1', name: 'House Kagera',   color: '#f97316' },
-  { id: 't3', client_id: 'c1', name: 'House Victoria', color: '#a855f7' },
-  { id: 't4', client_id: 'c1', name: 'House Kyoga',    color: '#22c55e' },
-  { id: 't5', client_id: 'c2', name: 'Team Alpha',     color: '#ef4444' },
-  { id: 't6', client_id: 'c2', name: 'Team Bravo',     color: '#eab308' },
-  { id: 't7', client_id: 'c2', name: 'Team Charlie',   color: '#3b82f6' },
+  { id: 't1', event_id: 'e1', name: 'House Nile',     color: '#06b6d4' },
+  { id: 't2', event_id: 'e1', name: 'House Kagera',   color: '#f97316' },
+  { id: 't3', event_id: 'e1', name: 'House Victoria', color: '#a855f7' },
+  { id: 't4', event_id: 'e1', name: 'House Kyoga',    color: '#22c55e' },
+  { id: 't5', event_id: 'e2', name: 'Team Alpha',     color: '#ef4444' },
+  { id: 't6', event_id: 'e2', name: 'Team Bravo',     color: '#eab308' },
+  { id: 't7', event_id: 'e2', name: 'Team Charlie',   color: '#3b82f6' },
 ]
 
 export const EDITIONS: Edition[] = [
@@ -40,13 +39,13 @@ export const EDITIONS: Edition[] = [
 ]
 
 export const GAMES: Game[] = [
-  { id: 'g1', edition_id: 'ed2', name: '100m Sprint',         type: 'multi_participant',   scoring_direction: 'lower_is_better',  weight: 1,   status: 'completed', order: 1 },
-  { id: 'g2', edition_id: 'ed2', name: 'Tug of War',          type: 'standard',            scoring_direction: 'lower_is_better',  weight: 1,   status: 'completed', order: 2 },
-  { id: 'g3', edition_id: 'ed2', name: 'General Knowledge',   type: 'cumulative',          scoring_direction: 'higher_is_better', weight: 1.5, status: 'active',    order: 3 },
-  { id: 'g4', edition_id: 'ed2', name: 'Football',            type: 'bracket_round_robin', scoring_direction: 'higher_is_better', weight: 2,   status: 'pending',   order: 4 },
-  { id: 'g5', edition_id: 'ed3', name: 'Sack Race',           type: 'standard',            scoring_direction: 'lower_is_better',  weight: 1,   status: 'completed', order: 1 },
-  { id: 'g6', edition_id: 'ed3', name: 'Trivia',              type: 'points',              scoring_direction: 'higher_is_better', weight: 1,   status: 'completed', order: 2 },
-  { id: 'g7', edition_id: 'ed3', name: 'Table Tennis',        type: 'bracket_single',      scoring_direction: 'higher_is_better', weight: 1.5, status: 'active',    order: 3 },
+  { id: 'g1', edition_id: 'ed2', name: '100m Sprint',         type: 'multi_participant',   scoring_direction: 'lower_is_better',  scoring_mode: 'dynamic', weight: 1,   status: 'completed', order: 1 },
+  { id: 'g2', edition_id: 'ed2', name: 'Tug of War',          type: 'standard',            scoring_direction: 'lower_is_better',  scoring_mode: 'dynamic', weight: 1,   status: 'completed', order: 2 },
+  { id: 'g3', edition_id: 'ed2', name: 'General Knowledge',   type: 'cumulative',          scoring_direction: 'higher_is_better', scoring_mode: 'dynamic', weight: 1.5, status: 'active',    order: 3 },
+  { id: 'g4', edition_id: 'ed2', name: 'Football',            type: 'bracket_round_robin', scoring_direction: 'higher_is_better', scoring_mode: 'dynamic', weight: 2,   status: 'pending',   order: 4 },
+  { id: 'g5', edition_id: 'ed3', name: 'Sack Race',           type: 'standard',            scoring_direction: 'lower_is_better',  scoring_mode: 'dynamic', weight: 1,   status: 'completed', order: 1 },
+  { id: 'g6', edition_id: 'ed3', name: 'Trivia',              type: 'points',              scoring_direction: 'higher_is_better', scoring_mode: 'dynamic', weight: 1,   status: 'completed', order: 2 },
+  { id: 'g7', edition_id: 'ed3', name: 'Table Tennis',        type: 'bracket_single',      scoring_direction: 'higher_is_better', scoring_mode: 'dynamic', weight: 1.5, status: 'active',    order: 3 },
 ]
 
 export const STANDARD_RESULTS: StandardResult[] = [

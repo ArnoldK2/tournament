@@ -68,6 +68,7 @@ export default function AdminGames() {
       name: gameName.trim(),
       type: gameType,
       scoring_direction: direction,
+      scoring_mode: 'dynamic' as const,
       weight,
       status,
     }

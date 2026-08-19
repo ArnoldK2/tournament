@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
 import AdminHeader from '../../components/AdminHeader'
@@ -13,7 +13,6 @@ const PRESET_COLORS = [
 
 export default function AdminTeams() {
   const { clientId, eventId } = useParams<{ clientId: string; eventId: string }>()
-  const navigate = useNavigate()
 
   const clients = useStore(s => s.clients)
   const events = useStore(s => s.events)

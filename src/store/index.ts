@@ -255,7 +255,7 @@ export const useStore = create<AppState>((set, get) => ({
       .map(g => ({ edition_id: toEditionId, name: g.name, type: g.type, scoring_direction: g.scoring_direction, scoring_mode: g.scoring_mode, weight: g.weight, status: 'pending' as const, order: g.order, participants_per_team: g.participants_per_team ?? 1, attempts_per_participant: g.attempts_per_participant ?? 1 }))
     if (newGames.length === 0) return
     const { data: rows } = await supabase.from('games').insert(newGames).select()
-    if (rows) set(s => ({ games: [...s.games, ...rows.map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1, is_fun: r.is_fun ?? false }))] }))
+    if (rows) set(s => ({ games: [...s.games, ...rows.map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, scoring_mode: r.scoring_mode ?? 'dynamic', weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1, is_fun: r.is_fun ?? false }))] }))
   },
 
   saveStandardResults: async (gameId, results) => {
