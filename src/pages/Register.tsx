@@ -13,10 +13,12 @@ export default function Register() {
   const editions = useStore(s => s.editions)
   const events = useStore(s => s.events)
   const clients = useStore(s => s.clients)
+  const allTeams = useStore(s => s.teams)
 
   const edition = editions.find(e => e.id === editionId)
   const event = events.find(e => e.id === edition?.event_id)
   const client = clients.find(c => c.id === event?.client_id)
+  const teams = allTeams.filter(t => t.event_id === event?.id && !t.is_fun)
 
   const [name, setName] = useState('')
   const [department, setDepartment] = useState('')
@@ -154,14 +156,20 @@ export default function Register() {
           required
         />
 
-        <label className="aud-label">Team Name *</label>
-        <input
-          className="aud-input"
-          value={teamName}
-          onChange={e => setTeamName(e.target.value)}
-          placeholder="Your team name"
-          required
-        />
+        <label className="aud-label">Team *</label>
+        <div className="aud-houses">
+          {teams.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              className={`aud-house-btn ${teamName === t.name ? 'active' : ''}`}
+              style={{ '--hc': t.color } as React.CSSProperties}
+              onClick={() => setTeamName(t.name)}
+            >
+              {t.name}
+            </button>
+          ))}
+        </div>
 
         {error && <p className="aud-error">{error}</p>}
 
