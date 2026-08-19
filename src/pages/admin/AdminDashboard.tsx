@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useStore } from '../../store'
+import { editionStatus } from '../../lib/editionStatus'
 import '../../styles/admin.css'
 
 const ADMIN_TILES = [
@@ -27,7 +28,7 @@ export default function AdminDashboard() {
   const client = clients.find(c => c.id === clientId)
   const clientEvents = events.filter(e => e.client_id === clientId)
   const activeEditions = editions.filter(e =>
-    clientEvents.some(ev => ev.id === e.event_id) && e.status === 'active'
+    clientEvents.some(ev => ev.id === e.event_id) && editionStatus(e.date) === 'active'
   )
 
   if (!client) {

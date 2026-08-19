@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
 import { computeLeaderboard } from '../../store/scoring'
+import { editionStatus } from '../../lib/editionStatus'
+import AdminHeader from '../../components/AdminHeader'
 import ResultsEntry from './ResultsEntry'
 import type { Game, GameType, ScoringDirection, Team, GameParticipant } from '../../types'
 import '../../styles/admin.css'
@@ -10,7 +12,7 @@ import '../../styles/workspace.css'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
-function GameTop3({ game, teams, scoringMode }: { game: Game; teams: Team[]; scoringMode: 'dynamic' | 'fixed' }) {
+function GameTop3({ game, teams }: { game: Game; teams: Team[] }) {
   const standardResults = useStore(s => s.standardResults)
   const pointsResults = useStore(s => s.pointsResults)
   const participantResults = useStore(s => s.participantResults)
@@ -20,12 +22,12 @@ function GameTop3({ game, teams, scoringMode }: { game: Game; teams: Team[]; sco
 
   const top3 = useMemo(() => {
     const entries = computeLeaderboard({
-      games: [game], teams, scoringMode,
+      games: [game], teams,
       standardResults, pointsResults, participantResults,
       participantAttemptResults, cumulativeRounds, bracketMatches,
     })
     return entries.filter(e => e.total_score > 0).slice(0, 3)
-  }, [game, teams, scoringMode, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches])
+  }, [game, teams, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches])
 
   if (!top3.length) return null
   return (
@@ -41,60 +43,41 @@ function GameTop3({ game, teams, scoringMode }: { game: Game; teams: Team[]; sco
 }
 
 // ── Participant name entry per team ──────────────────────────
-function TeamPlayerRow({ game, team, allParticipants, saveGameParticipants }: {
+function TeamPlayerRow({ game, team, count, allParticipants, onNamesChange }: {
   game: Game
   team: Team
+  count: number
   allParticipants: GameParticipant[]
-  saveGameParticipants: (gameId: string, teamId: string, names: string[]) => Promise<void>
+  onNamesChange: (teamId: string, names: string[]) => void
 }) {
   const existing = allParticipants
     .filter(p => p.game_id === game.id && p.team_id === team.id)
     .sort((a, b) => a.sort_order - b.sort_order)
+    .map(p => p.name)
 
-  const [names, setNames] = useState<string[]>(() => existing.length ? existing.map(p => p.name) : [''])
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [errMsg, setErrMsg] = useState('')
-  const [dirty, setDirty] = useState(false)
+  const [names, setNames] = useState<string[]>(() => {
+    const base = existing.length ? existing : []
+    return Array.from({ length: count }, (_, i) => base[i] ?? '')
+  })
 
   useEffect(() => {
-    const stored = existing.map(p => p.name)
-    setNames(stored.length ? stored : [''])
-    setDirty(false)
-  }, [allParticipants.length, game.id, team.id])
-
-  async function doSave() {
-    const clean = names.map(n => n.trim()).filter(Boolean)
-    setStatus('saving')
-    setErrMsg('')
-    try {
-      await saveGameParticipants(game.id, team.id, clean)
-      setStatus('saved')
-      setDirty(false)
-      setTimeout(() => setStatus('idle'), 1500)
-    } catch (e: unknown) {
-      setStatus('error')
-      setErrMsg(e instanceof Error ? e.message : 'Save failed')
-    }
-  }
+    const base = existing.length ? existing : []
+    setNames(Array.from({ length: count }, (_, i) => base[i] ?? ''))
+  }, [count, allParticipants.length, game.id, team.id])
 
   function update(i: number, val: string) {
-    setNames(prev => { const n = [...prev]; n[i] = val; return n })
-    setDirty(true)
-  }
-
-  function remove(i: number) {
-    const next = names.length > 1 ? names.filter((_, j) => j !== i) : ['']
-    setNames(next)
-    setDirty(true)
+    setNames(prev => {
+      const n = [...prev]; n[i] = val
+      onNamesChange(team.id, n)
+      return n
+    })
   }
 
   return (
     <div className="ws-pl-team">
       <div className="ws-pl-team-label">
         <span className="ws-pl-dot" style={{ background: team.color }} />
-        <span className="ws-pl-tname">{team.name.split(' ')[0]}</span>
-        {status === 'saved' && <span className="ws-pl-saved">✓ Saved</span>}
-        {status === 'error' && <span className="ws-pl-err" title={errMsg}>✕ Error</span>}
+        <span className="ws-pl-tname">{team.name}</span>
       </div>
       <div className="ws-pl-inputs">
         {names.map((name, i) => (
@@ -105,19 +88,8 @@ function TeamPlayerRow({ game, team, allParticipants, saveGameParticipants }: {
               placeholder={`Player ${i + 1}`}
               onChange={e => update(i, e.target.value)}
             />
-            <button className="ws-pl-del" onClick={() => remove(i)} tabIndex={-1}>×</button>
           </div>
         ))}
-        <div className="ws-pl-footer">
-          <button className="ws-pl-add" onClick={() => { setNames(n => [...n, '']); setDirty(true) }}>+ player</button>
-          <button
-            className={`ws-pl-save ${dirty ? 'active' : ''}`}
-            onClick={doSave}
-            disabled={status === 'saving' || !dirty}
-          >
-            {status === 'saving' ? 'Saving…' : 'Save'}
-          </button>
-        </div>
       </div>
     </div>
   )
@@ -126,40 +98,80 @@ function TeamPlayerRow({ game, team, allParticipants, saveGameParticipants }: {
 function GameParticipantsPanel({ game, teams }: { game: Game; teams: Team[] }) {
   const allParticipants = useStore(s => s.gameParticipants)
   const saveGameParticipants = useStore(s => s.saveGameParticipants)
-  const [open, setOpen] = useState(false)
 
-  const hasAny = allParticipants.some(p => p.game_id === game.id)
+  const maxExisting = teams.reduce((max, t) => {
+    const n = allParticipants.filter(p => p.game_id === game.id && p.team_id === t.id).length
+    return Math.max(max, n)
+  }, 0)
+
+  const [count, setCount] = useState(maxExisting || 1)
+  const [teamNames, setTeamNames] = useState<Record<string, string[]>>({})
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  function handleNamesChange(teamId: string, names: string[]) {
+    setTeamNames(prev => ({ ...prev, [teamId]: names }))
+    setSaved(false)
+  }
+
+  async function saveAll() {
+    setSaving(true)
+    await Promise.all(teams.map(t => {
+      const names = (teamNames[t.id] ?? Array.from({ length: count }, (_, i) => {
+        const existing = allParticipants
+          .filter(p => p.game_id === game.id && p.team_id === t.id)
+          .sort((a, b) => a.sort_order - b.sort_order)
+        return existing[i]?.name ?? ''
+      })).map(n => n.trim()).filter(Boolean)
+      return saveGameParticipants(game.id, t.id, names)
+    }))
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
 
   return (
     <div className="ws-pl-wrap">
-      <button className="ws-pl-toggle" onClick={() => setOpen(o => !o)}>
-        <span>Players</span>
-        {hasAny && <span className="ws-pl-count">{allParticipants.filter(p => p.game_id === game.id).length}</span>}
-        <span className="ws-pl-chevron">{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <div className="ws-pl-grid">
-          {teams.map(team => (
-            <TeamPlayerRow
-              key={team.id}
-              game={game}
-              team={team}
-              allParticipants={allParticipants}
-              saveGameParticipants={saveGameParticipants}
-            />
-          ))}
-        </div>
-      )}
+      <div className="ws-pl-controls">
+        <span className="ws-pl-label">Players per team</span>
+        <input
+          className="ws-pl-count-input"
+          type="number"
+          min={1}
+          value={count}
+          onChange={e => { const v = parseInt(e.target.value); if (v > 0) setCount(v) }}
+        />
+        <button className="ws-pl-save-all" onClick={saveAll} disabled={saving}>
+          {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save All'}
+        </button>
+      </div>
+      <div className="ws-pl-grid">
+        {teams.map(team => (
+          <TeamPlayerRow
+            key={team.id}
+            game={game}
+            team={team}
+            count={count}
+            allParticipants={allParticipants}
+            onNamesChange={handleNamesChange}
+          />
+        ))}
+      </div>
     </div>
   )
 }
 
 const GAME_TYPES: { value: GameType; label: string; desc: string }[] = [
   { value: 'standard',              label: 'Standard',           desc: 'One position per team' },
-  { value: 'points',                label: 'Points',             desc: 'Raw score per team' },
+  { value: 'points',                label: 'Points / Counts',    desc: 'Enter points scored by each team' },
   { value: 'multi_participant',     label: 'Multi-Participant',  desc: 'Individual athletes per team' },
   { value: 'participant_attempts',  label: 'Attempt Tracker',    desc: 'Track hits/misses per participant' },
   { value: 'cumulative',            label: 'Cumulative Rounds',  desc: 'Scores add up across rounds' },
+  { value: 'match_play',            label: 'Match Play',         desc: 'Teams paired in matches, points for win/loss' },
+  { value: 'completion',            label: 'Completion',         desc: 'Teams finish or don\'t — done scores, not done doesn\'t' },
+  { value: 'tally',                 label: 'Tally',              desc: 'Tap to record each event live — buzzer, cans knocked, etc.' },
+  { value: 'lives',                 label: 'Lives',              desc: 'Each team starts with N lives — tap BUZZ to lose one' },
+  { value: 'head_to_head',         label: 'Head to Head',       desc: 'One winner per round — team with most round wins takes it' },
   { value: 'bracket_single',        label: 'Single Elimination', desc: 'Lose once and you\'re out' },
   { value: 'bracket_double',        label: 'Double Elimination', desc: 'Two losses to be eliminated' },
   { value: 'bracket_round_robin',   label: 'Round Robin',        desc: 'Everyone plays everyone' },
@@ -172,6 +184,7 @@ export default function EditionWorkspace() {
   const clients = useStore(s => s.clients)
   const events = useStore(s => s.events)
   const editions = useStore(s => s.editions)
+  const organizations = useStore(s => s.organizations)
   const allGames = useStore(s => s.games)
   const allEditions = useStore(s => s.editions)
   const allTeams = useStore(s => s.teams)
@@ -186,11 +199,12 @@ export default function EditionWorkspace() {
   const edition = editions.find(e => e.id === editionId)
   const event = events.find(e => e.id === edition?.event_id)
   const client = clients.find(c => c.id === clientId)
+  const org = organizations.find(o => o.id === client?.organization_id)
   const games = useMemo(
     () => allGames.filter(g => g.edition_id === editionId).sort((a, b) => a.order - b.order),
     [allGames, editionId]
   )
-  const teams = useMemo(() => allTeams.filter(t => t.client_id === clientId), [allTeams, clientId])
+  const teams = useMemo(() => allTeams.filter(t => t.event_id === event?.id), [allTeams, event?.id])
   const gameParticipants = useStore(s => s.gameParticipants)
 
   // Previous edition of same event (for copy)
@@ -202,19 +216,19 @@ export default function EditionWorkspace() {
   }, [allEditions, edition, editionId])
 
   const [statusFilter, setStatusFilter] = useState<'active' | 'pending' | 'completed'>('active')
-  const [showStatusPicker, setShowStatusPicker] = useState(false)
   const [activeGameId, setActiveGameId] = useState<string | null>(null)
+  const [gameTab, setGameTab] = useState<'results' | 'players'>('results')
   const [showGameForm, setShowGameForm] = useState(false)
   const [editingGame, setEditingGame] = useState<Game | null>(null)
   const [showClearModal, setShowClearModal] = useState(false)
   const [clearConfirm, setClearConfirm] = useState('')
   const [clearing, setClearing] = useState(false)
-  const [reopenGameId, setReopenGameId] = useState<string | null>(null)
 
   // Game form state
   const [gameName, setGameName] = useState('')
   const [gameType, setGameType] = useState<GameType>('standard')
   const [direction, setDirection] = useState<ScoringDirection>('lower_is_better')
+  const [gameScoringMode, setGameScoringMode] = useState<'dynamic' | 'fixed'>('dynamic')
   const [weight, setWeight] = useState(1)
   const [gameStatus, setGameStatus] = useState<'pending' | 'active' | 'completed'>('pending')
   const [isFunGame, setIsFunGame] = useState(false)
@@ -225,14 +239,15 @@ export default function EditionWorkspace() {
 
   function openAddGame() {
     setEditingGame(null); setGameName(''); setGameType('standard')
-    setDirection('lower_is_better'); setWeight(1); setGameStatus('pending')
+    setDirection('lower_is_better'); setGameScoringMode('dynamic'); setWeight(1); setGameStatus('pending')
     setIsFunGame(false); setParticipantsPerTeam(1); setAttemptsPerParticipant(1)
     setShowGameForm(true)
   }
 
   function openEditGame(g: Game) {
     setEditingGame(g); setGameName(g.name); setGameType(g.type)
-    setDirection(g.scoring_direction); setWeight(g.weight); setGameStatus(g.status)
+    setDirection(g.scoring_direction); setGameScoringMode(g.scoring_mode ?? 'dynamic')
+    setWeight(g.weight); setGameStatus(g.status)
     setIsFunGame(g.is_fun ?? false)
     setParticipantsPerTeam(g.participants_per_team ?? 1)
     setAttemptsPerParticipant(g.attempts_per_participant ?? 1)
@@ -243,69 +258,30 @@ export default function EditionWorkspace() {
     if (!gameName.trim()) return
     const base = {
       edition_id: editionId!, name: gameName.trim(), type: gameType,
-      scoring_direction: gameType === 'participant_attempts' ? 'higher_is_better' as const : direction,
+      scoring_direction: (gameType === 'participant_attempts' || gameType === 'head_to_head') ? 'higher_is_better' as const : direction,
+      scoring_mode: gameScoringMode,
       weight, status: gameStatus, is_fun: isFunGame,
-      ...(gameType === 'participant_attempts' ? { participants_per_team: participantsPerTeam, attempts_per_participant: attemptsPerParticipant } : {}),
+      ...((gameType === 'participant_attempts') ? { participants_per_team: participantsPerTeam, attempts_per_participant: attemptsPerParticipant } : {}),
+      ...((gameType === 'tally' || gameType === 'lives' || gameType === 'head_to_head') ? { participants_per_team: participantsPerTeam } : {}),
     }
     if (editingGame) updateGame(editingGame.id, base)
     else addGame({ ...base, order: games.length + 1 })
     setShowGameForm(false)
   }
 
-  const needsDirection = ['standard', 'multi_participant', 'cumulative', 'points'].includes(gameType)
+  const needsDirection = ['standard', 'multi_participant', 'cumulative', 'points', 'tally'].includes(gameType)
+  const needsScoringMode = ['standard', 'points', 'multi_participant', 'participant_attempts', 'cumulative', 'tally', 'lives', 'head_to_head'].includes(gameType)
   return (
     <div className="admin-root">
-      <header className="admin-header">
-        <div className="admin-breadcrumb">
-          <button className="breadcrumb-btn" onClick={() => navigate(`/admin/${clientId}`)}>
-            {client.name}
-          </button>
-          <span className="breadcrumb-sep">›</span>
-          <span className="breadcrumb-current">{event.name} · {edition.label}</span>
-        </div>
-        <div className="admin-header-right">
-          <div className="edition-status-wrap">
-            {(role === 'client_admin' || role === 'super_admin') ? (
-              <button className={`dec-status status-${edition.status} clickable`} onClick={() => setShowStatusPicker(s => !s)}>
-                {edition.status} ▾
-              </button>
-            ) : (
-              <span className={`dec-status status-${edition.status}`}>{edition.status}</span>
-            )}
-            <AnimatePresence>
-              {showStatusPicker && (
-                <motion.div
-                  className="edition-status-dropdown"
-                  initial={{ opacity: 0, y: -6, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  {(['upcoming', 'active', 'completed'] as const).map(s => (
-                    <button
-                      key={s}
-                      className={`esd-option status-${s} ${edition.status === s ? 'current' : ''}`}
-                      onClick={() => { updateEdition(editionId!, { status: s }); setShowStatusPicker(false) }}
-                    >
-                      {s === 'upcoming' && '○ '}
-                      {s === 'active'   && '● '}
-                      {s === 'completed' && '✓ '}
-                      {s}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          {(role === 'client_admin' || role === 'super_admin') && (
-            <button
-              className={`scoring-mode-btn ${(edition.scoring_mode ?? 'dynamic') === 'fixed' ? 'fixed' : ''}`}
-              onClick={() => updateEdition(editionId!, { scoring_mode: (edition.scoring_mode ?? 'dynamic') === 'fixed' ? 'dynamic' : 'fixed' })}
-              title="Toggle scoring mode"
-            >
-              {(edition.scoring_mode ?? 'dynamic') === 'fixed' ? '★ Fixed Pts' : '○ Dynamic'}
-            </button>
-          )}
+      <AdminHeader
+        orgName={org?.name}
+        crumbs={[
+          { label: 'Clients', to: `/admin/orgs/${client.organization_id}` },
+          { label: client.name, to: `/admin/${clientId}` },
+          { label: event.name, to: `/admin/${clientId}` },
+          { label: edition.label, badge: { text: editionStatus(edition.date), status: editionStatus(edition.date) } },
+        ]}
+      >
           {role === 'super_admin' && (
             <button
               className="icon-btn danger-btn"
@@ -315,9 +291,10 @@ export default function EditionWorkspace() {
               ⚠
             </button>
           )}
-          <button className="icon-btn" onClick={() => navigate(`/leaderboard/${editionId}`)} title="View leaderboard">↗</button>
-        </div>
-      </header>
+          <button className="ew-leaderboard-btn" onClick={() => navigate(`/leaderboard/${editionId}`)}>
+            <span>Leaderboard</span> ↗
+          </button>
+      </AdminHeader>
 
       <div className="workspace-body">
         {/* Header row */}
@@ -372,11 +349,11 @@ export default function EditionWorkspace() {
         )}
 
         <div className="ws-game-list">
-          {games.filter(g => g.status === statusFilter).map(game => (
+          {games.filter(g => g.status === statusFilter).sort((a, b) => a.name.localeCompare(b.name)).map(game => (
             <div key={game.id}>
               <button
                 className={`ws-game-row ${activeGameId === game.id ? 'active' : ''}`}
-                onClick={() => setActiveGameId(activeGameId === game.id ? null : game.id)}
+                onClick={() => { setActiveGameId(activeGameId === game.id ? null : game.id); setGameTab('results') }}
               >
                 <div className="wsgr-left">
                   <span className={`status-dot dot-${game.status}`} />
@@ -412,31 +389,57 @@ export default function EditionWorkspace() {
                     transition={{ duration: 0.25 }}
                   >
                     <div className="ws-panel-inner">
-                      <GameParticipantsPanel game={game} teams={teams} />
-
+                      {/* Action bar */}
                       <div className="ws-panel-actions">
-                        {(role === 'client_admin' || role === 'super_admin') && (
-                          <>
-                            <button className="alr-btn" onClick={() => openEditGame(game)}>Edit game</button>
-                            <button className="alr-btn danger" onClick={() => { deleteGame(game.id); setActiveGameId(null) }}>Delete</button>
-                          </>
-                        )}
                         <button
                           className={`alr-btn ${game.status === 'active' ? 'success' : ''}`}
                           onClick={() => {
-                            if (game.status === 'completed') { setReopenGameId(game.id); return }
-                            updateGame(game.id, { status: game.status === 'pending' ? 'active' : 'completed' })
+                            if (game.status === 'completed') { updateGame(game.id, { status: 'active' }); return }
+                            const next = game.status === 'pending' ? 'active' : 'completed'
+                            updateGame(game.id, { status: next, ...(next === 'active' && !game.started_at ? { started_at: new Date().toISOString() } : {}) })
                           }}
                         >
                           {game.status === 'pending' ? '▶ Start' : game.status === 'active' ? '✓ Complete' : '↩ Reopen'}
                         </button>
+                        {(role === 'client_admin' || role === 'super_admin') && (
+                          <>
+                            <button className="alr-btn" onClick={() => openEditGame(game)}>Edit</button>
+                          </>
+                        )}
                       </div>
 
-                      {game.status === 'completed' && (
-                        <GameTop3 game={game} teams={teams} scoringMode={edition.scoring_mode ?? 'dynamic'} />
-                      )}
+                      {/* Tab bar */}
+                      <div className="ws-game-tabs">
+                        <button className={`ws-game-tab ${gameTab === 'results' ? 'active' : ''}`} onClick={() => setGameTab('results')}>Results</button>
+                        <button className={`ws-game-tab ${gameTab === 'players' ? 'active' : ''}`} onClick={() => setGameTab('players')}>Players</button>
+                      </div>
 
-                      <ResultsEntry game={game} clientId={clientId!} />
+                      {/* Tab content */}
+                      {gameTab === 'results' && (
+                        <>
+                          {game.status === 'completed' && (
+                            <GameTop3 game={game} teams={teams} />
+                          )}
+                          {game.status === 'pending' ? (
+                            <div className="ws-pending-gate">
+                              <span className="ws-pending-gate-icon">▶</span>
+                              <p>Tap <strong>Start</strong> to activate this game and enter results.</p>
+                            </div>
+                          ) : (
+                            <ResultsEntry game={game} eventId={event?.id ?? ''} />
+                          )}
+                        </>
+                      )}
+                      {gameTab === 'players' && (
+                        game.status === 'pending' ? (
+                          <div className="ws-pending-gate">
+                            <span className="ws-pending-gate-icon">▶</span>
+                            <p>Tap <strong>Start</strong> to activate this game and enter players.</p>
+                          </div>
+                        ) : (
+                          <GameParticipantsPanel game={game} teams={teams} />
+                        )
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -447,43 +450,6 @@ export default function EditionWorkspace() {
       </div>
 
       {/* Game form bottom sheet */}
-      {/* ── Reopen Game Modal ── */}
-      <AnimatePresence>
-        {reopenGameId && (
-          <motion.div
-            className="modal-backdrop"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setReopenGameId(null)}
-          >
-            <motion.div
-              className="modal-card"
-              initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              onClick={e => e.stopPropagation()}
-              style={{ maxWidth: 400 }}
-            >
-              <p className="modal-title">↩ Reopen Game</p>
-              <p className="modal-label" style={{ marginBottom: '1rem' }}>
-                How do you want to reopen <strong>{games.find(g => g.id === reopenGameId)?.name}</strong>?
-              </p>
-              <button
-                className="modal-btn primary"
-                style={{ width: '100%', marginBottom: '0.6rem' }}
-                onClick={() => { updateGame(reopenGameId, { status: 'active' }); setReopenGameId(null) }}
-              >
-                ▶ Active — results still count toward leaderboard
-              </button>
-              <button
-                className="modal-btn"
-                style={{ width: '100%', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', color: '#f87171' }}
-                onClick={() => { updateGame(reopenGameId, { status: 'pending' }); setReopenGameId(null) }}
-              >
-                ⏸ Pending — removes this game from the leaderboard
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Clear Results Modal (super_admin only) ── */}
       <AnimatePresence>
@@ -562,20 +528,54 @@ export default function EditionWorkspace() {
                 ))}
               </div>
 
+              {gameType === 'tally' && (
+                <>
+                  <label className="modal-label">Tries per team</label>
+                  <input
+                    type="number" min={1} value={participantsPerTeam}
+                    onChange={e => setParticipantsPerTeam(Number(e.target.value))}
+                    className="modal-input"
+                    style={{ width: '6rem' }}
+                  />
+                </>
+              )}
+
+              {gameType === 'lives' && (
+                <>
+                  <label className="modal-label">Lives per team</label>
+                  <input
+                    type="number" min={1} value={participantsPerTeam}
+                    onChange={e => setParticipantsPerTeam(Number(e.target.value))}
+                    className="modal-input" style={{ width: '6rem' }}
+                  />
+                </>
+              )}
+
+              {gameType === 'head_to_head' && (
+                <>
+                  <label className="modal-label">Number of rounds</label>
+                  <input
+                    type="number" min={1} value={participantsPerTeam}
+                    onChange={e => setParticipantsPerTeam(Number(e.target.value))}
+                    className="modal-input" style={{ width: '6rem' }}
+                  />
+                </>
+              )}
+
               {gameType === 'participant_attempts' && (
                 <>
                   <label className="modal-label">Participants per team</label>
-                  <div className="weight-row">
-                    {[1, 2, 3, 4, 5].map(n => (
-                      <button key={n} className={`weight-btn ${participantsPerTeam === n ? 'selected' : ''}`} onClick={() => setParticipantsPerTeam(n)}>{n}</button>
-                    ))}
-                  </div>
+                  <input
+                    type="number" min={1} value={participantsPerTeam}
+                    onChange={e => setParticipantsPerTeam(Number(e.target.value))}
+                    className="modal-input" style={{ width: '6rem' }}
+                  />
                   <label className="modal-label">Attempts per participant</label>
-                  <div className="weight-row">
-                    {[1, 2, 3, 4, 5, 6].map(n => (
-                      <button key={n} className={`weight-btn ${attemptsPerParticipant === n ? 'selected' : ''}`} onClick={() => setAttemptsPerParticipant(n)}>{n}</button>
-                    ))}
-                  </div>
+                  <input
+                    type="number" min={1} value={attemptsPerParticipant}
+                    onChange={e => setAttemptsPerParticipant(Number(e.target.value))}
+                    className="modal-input" style={{ width: '6rem' }}
+                  />
                 </>
               )}
 
@@ -593,6 +593,20 @@ export default function EditionWorkspace() {
                 </>
               )}
 
+              {needsScoringMode && (
+                <>
+                  <label className="modal-label">Scoring Mode</label>
+                  <div className="direction-row">
+                    <button className={`direction-btn ${gameScoringMode === 'dynamic' ? 'selected' : ''}`} onClick={() => setGameScoringMode('dynamic')}>
+                      Dynamic <span className="dir-eg">(raw score counts)</span>
+                    </button>
+                    <button className={`direction-btn ${gameScoringMode === 'fixed' ? 'selected' : ''}`} onClick={() => setGameScoringMode('fixed')}>
+                      Fixed <span className="dir-eg">(re-rank by position)</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
               <label className="modal-label">Weight <span className="modal-label-hint">multiplier</span></label>
               <div className="weight-row">
                 {[0.5, 1, 1.5, 2, 3].map(w => (
@@ -600,14 +614,18 @@ export default function EditionWorkspace() {
                 ))}
               </div>
 
-              <label className="modal-label">Status</label>
-              <div className="direction-row">
-                {(['pending', 'active', 'completed'] as const).map(s => (
-                  <button key={s} className={`direction-btn ${gameStatus === s ? 'selected' : ''}`} onClick={() => setGameStatus(s)}>{s}</button>
-                ))}
-              </div>
-              {editingGame?.status === 'completed' && gameStatus === 'pending' && (
-                <p className="reopen-warning">⚠ Setting to pending removes this game from the leaderboard until it is active or completed again.</p>
+              {editingGame && (
+                <>
+                  <label className="modal-label">Status</label>
+                  <div className="direction-row">
+                    {(['pending', 'active', 'completed'] as const).map(s => (
+                      <button key={s} className={`direction-btn ${gameStatus === s ? 'selected' : ''}`} onClick={() => setGameStatus(s)}>{s}</button>
+                    ))}
+                  </div>
+                  {editingGame.status === 'completed' && gameStatus === 'pending' && (
+                    <p className="reopen-warning">⚠ Setting to pending removes this game from the leaderboard until it is active or completed again.</p>
+                  )}
+                </>
               )}
 
               <label className="modal-label" style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>

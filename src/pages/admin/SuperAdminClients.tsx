@@ -2,16 +2,16 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
+import AdminHeader from '../../components/AdminHeader'
 import '../../styles/admin.css'
 import '../../styles/workspace.css'
 
-export default function SuperAdminClients() {
+export default function SuperAdminOrgs() {
   const navigate = useNavigate()
+  const organizations = useStore(s => s.organizations)
   const clients = useStore(s => s.clients)
-  const users = useStore(s => s.users)
   const role = useStore(s => s.currentRole)
-  const logout = useStore(s => s.logout)
-  const addClient = useStore(s => s.addClient)
+  const addOrganization = useStore(s => s.addOrganization)
 
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
@@ -19,49 +19,43 @@ export default function SuperAdminClients() {
 
   if (role !== 'super_admin') { navigate('/login'); return null }
 
-  function saveClient() {
+  function saveOrg() {
     if (!name.trim()) return
-    addClient({ name: name.trim(), slug: slug.trim() || name.trim().toLowerCase().replace(/\s+/g, '-'), logo_color: '#6366f1' })
+    addOrganization({ name: name.trim(), slug: slug.trim() || name.trim().toLowerCase().replace(/\s+/g, '-') })
     setName(''); setSlug(''); setShowForm(false)
   }
 
   return (
     <div className="admin-root">
-      <header className="admin-header">
-        <h1 className="admin-page-title">Clients</h1>
-        <div className="admin-header-right">
-          <span className="role-badge sa">Super Admin</span>
-          <button className="icon-btn" onClick={() => { logout(); navigate('/') }}>↩</button>
-        </div>
-      </header>
+      <AdminHeader orgName="Organisations" />
 
       <div className="dash-body">
-        {clients.length === 0 && (
+        {organizations.length === 0 && (
           <div className="dash-empty">
-            <p>No clients yet. Add your first organisation.</p>
+            <p>No organisations yet.</p>
           </div>
         )}
 
-        {clients.map(client => {
-          const clientUsers = users.filter(u => u.client_id === client.id)
+        {organizations.map(org => {
+          const orgClients = clients.filter(c => c.organization_id === org.id)
           return (
             <motion.button
-              key={client.id}
+              key={org.id}
               className="sa-client-card"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              onClick={() => navigate(`/admin/${client.id}`)}
+              onClick={() => navigate(`/admin/orgs/${org.id}`)}
             >
               <div className="sa-cc-top">
-                <h3 className="sa-cc-name">{client.name}</h3>
+                <h3 className="sa-cc-name">{org.name}</h3>
                 <span className="sa-cc-arrow">→</span>
               </div>
-              <p className="sa-cc-meta">{clientUsers.length} user{clientUsers.length !== 1 ? 's' : ''}</p>
+              <p className="sa-cc-meta">{orgClients.length} client{orgClients.length !== 1 ? 's' : ''}</p>
             </motion.button>
           )
         })}
 
-        <button className="dash-new-event-btn" onClick={() => setShowForm(true)}>+ Add Client</button>
+        <button className="dash-new-event-btn" onClick={() => setShowForm(true)}>+ Add Organisation</button>
       </div>
 
       <AnimatePresence>
@@ -74,17 +68,17 @@ export default function SuperAdminClients() {
               onClick={e => e.stopPropagation()}
             >
               <div className="sheet-handle" />
-              <h2 className="modal-title">Add Client</h2>
+              <h2 className="modal-title">Add Organisation</h2>
 
-              <label className="modal-label">Organisation Name</label>
-              <input className="modal-input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Nabbingo Old Girls" autoFocus />
+              <label className="modal-label">Name</label>
+              <input className="modal-input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. PlayHouse" autoFocus />
 
               <label className="modal-label">Slug <span className="modal-label-hint">URL-safe ID</span></label>
               <input className="modal-input" value={slug} onChange={e => setSlug(e.target.value)} placeholder="Auto-generated if empty" />
 
               <div className="modal-actions">
                 <button className="modal-btn secondary" onClick={() => setShowForm(false)}>Cancel</button>
-                <button className="modal-btn primary" onClick={saveClient} disabled={!name.trim()}>Add Client</button>
+                <button className="modal-btn primary" onClick={saveOrg} disabled={!name.trim()}>Add</button>
               </div>
             </motion.div>
           </motion.div>

@@ -7,7 +7,6 @@ import type {
 interface ScoringData {
   games: Game[]
   teams: Team[]
-  scoringMode?: 'dynamic' | 'fixed'
   standardResults: StandardResult[]
   pointsResults: PointsResult[]
   participantResults: ParticipantResult[]
@@ -35,20 +34,19 @@ function computePoints(game: Game, teams: Team[], results: PointsResult[], fixed
   if (!gameResults.length) return out
 
   if (!fixed) {
-    // Dynamic: raw score is taken as fact, multiplied by weight
     for (const r of gameResults) out.set(r.team_id, r.raw_score * game.weight)
     return out
   }
 
-  // Fixed mode: rank by score, assign fixed points (winner=n, last=1)
   const sorted = [...gameResults].sort((a, b) =>
     game.scoring_direction === 'higher_is_better' ? b.raw_score - a.raw_score : a.raw_score - b.raw_score
   )
   const n = teams.length
-  sorted.forEach(r => {
-    const rankIndex = sorted.reduce((last, x, i) => x.raw_score === r.raw_score ? i : last, 0)
-    out.set(r.team_id, rankPoints(rankIndex + 1, n, game.weight, true))
-  })
+  let rank = 1
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i].raw_score !== sorted[i - 1].raw_score) rank = i + 1
+    out.set(sorted[i].team_id, rankPoints(rank, n, game.weight, true))
+  }
   return out
 }
 
@@ -61,7 +59,11 @@ function computeMultiParticipant(game: Game, teams: Team[], results: Participant
     game.scoring_direction === 'lower_is_better' ? a[1] - b[1] : b[1] - a[1]
   )
   const n = teams.length
-  sorted.forEach(([teamId], i) => out.set(teamId, rankPoints(i + 1, n, game.weight, fixed)))
+  let rank = 1
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i][1] !== sorted[i - 1][1]) rank = i + 1
+    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed))
+  }
   return out
 }
 
@@ -75,7 +77,11 @@ function computeParticipantAttempts(game: Game, teams: Team[], results: Particip
   }
   const sorted = [...teamSuccesses.entries()].sort((a, b) => b[1] - a[1])
   const n = teams.length
-  sorted.forEach(([teamId], i) => out.set(teamId, rankPoints(i + 1, n, game.weight, fixed)))
+  let rank = 1
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i][1] !== sorted[i - 1][1]) rank = i + 1
+    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed))
+  }
   return out
 }
 
@@ -90,7 +96,52 @@ function computeCumulative(game: Game, teams: Team[], rounds: CumulativeRound[],
     game.scoring_direction === 'higher_is_better' ? b[1] - a[1] : a[1] - b[1]
   )
   const n = teams.length
-  sorted.forEach(([teamId], i) => out.set(teamId, rankPoints(i + 1, n, game.weight, fixed)))
+  let rank = 1
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i][1] !== sorted[i - 1][1]) rank = i + 1
+    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed))
+  }
+  return out
+}
+
+function computeLives(game: Game, teams: Team[], results: PointsResult[]): Map<string, number> {
+  const out = new Map<string, number>()
+  const gameResults = results.filter(r => r.game_id === game.id)
+  if (!gameResults.length) return out
+  const n = teams.length
+  const surviving = [...gameResults.filter(r => r.raw_score > 0)]
+    .sort((a, b) => b.raw_score - a.raw_score)
+  const eliminated = gameResults.filter(r => r.raw_score === 0)
+  // Surviving teams ranked by lives left (dense ranking — ties share rank, no gaps)
+  let denseRank = 0
+  for (let i = 0; i < surviving.length; i++) {
+    if (i === 0 || surviving[i].raw_score !== surviving[i - 1].raw_score) denseRank++
+    out.set(surviving[i].team_id, rankPoints(denseRank, n, game.weight, false))
+  }
+  // All eliminated teams share last place (1 pt regardless of how many)
+  for (const r of eliminated) {
+    out.set(r.team_id, rankPoints(n, n, game.weight, false))
+  }
+  return out
+}
+
+function computeCompletion(game: Game, results: PointsResult[]): Map<string, number> {
+  const out = new Map<string, number>()
+  for (const r of results.filter(r => r.game_id === game.id)) out.set(r.team_id, r.raw_score)
+  return out
+}
+
+function computeMatchPlay(game: Game, matches: BracketMatch[]): Map<string, number> {
+  const out = new Map<string, number>()
+  const gameMatches = matches.filter(m => m.game_id === game.id)
+  for (const m of gameMatches) {
+    if (!m.winner_id || (!m.team_a_id && !m.team_b_id)) continue
+    const winPts = m.score_a ?? 3
+    const lossPts = m.score_b ?? 1
+    const loserId = m.winner_id === m.team_a_id ? m.team_b_id : m.team_a_id
+    out.set(m.winner_id, (out.get(m.winner_id) ?? 0) + winPts)
+    if (loserId) out.set(loserId, (out.get(loserId) ?? 0) + lossPts)
+  }
   return out
 }
 
@@ -106,19 +157,25 @@ function computeBracket(game: Game, teams: Team[], matches: BracketMatch[], fixe
   const participating = teams.filter(t => gameMatches.some(m => m.team_a_id === t.id || m.team_b_id === t.id))
   const sorted = [...participating].sort((a, b) => (wins.get(b.id) ?? 0) - (wins.get(a.id) ?? 0))
   const n = participating.length
-  sorted.forEach((team, i) => out.set(team.id, rankPoints(i + 1, n, game.weight, fixed)))
+  let rank = 1
+  for (let i = 0; i < sorted.length; i++) {
+    const score = wins.get(sorted[i].id) ?? 0
+    const prevScore = i > 0 ? (wins.get(sorted[i - 1].id) ?? 0) : score
+    if (i > 0 && score !== prevScore) rank = i + 1
+    out.set(sorted[i].id, rankPoints(rank, n, game.weight, fixed))
+  }
   return out
 }
 
 export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
   const { games } = data
   const teams = data.teams.filter(t => !t.is_fun)
-  const fixed = data.scoringMode === 'fixed'
   const scorableGames = games.filter(g => g.status !== 'pending' && !g.is_fun)
-  const teamScores = new Map<string, { game_id: string; game_name: string; score: number }[]>()
+  const teamScores = new Map<string, { game_id: string; game_name: string; score: number; game_rank: number }[]>()
   for (const team of teams) teamScores.set(team.id, [])
 
   for (const game of scorableGames) {
+    const fixed = game.scoring_mode === 'fixed'
     let gameMap: Map<string, number>
     switch (game.type) {
       case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed); break
@@ -126,11 +183,32 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
       case 'multi_participant':     gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed); break
       case 'participant_attempts':  gameMap = computeParticipantAttempts(game, teams, data.participantAttemptResults, fixed); break
       case 'cumulative':            gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed); break
+      case 'tally':                 gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed); break
+      case 'lives':                 gameMap = computeLives(game, teams, data.pointsResults); break
+      case 'head_to_head': {
+        const hthRounds = data.cumulativeRounds.filter(r => r.game_id === game.id)
+        console.log(`[scoring] head_to_head "${game.name}": ${hthRounds.length} cumulative rounds, first:`, hthRounds[0])
+        gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed)
+        console.log(`[scoring] head_to_head "${game.name}": gameMap size=${gameMap.size}`, Object.fromEntries(gameMap))
+        break
+      }
+      case 'completion':            gameMap = computeCompletion(game, data.pointsResults); break
+      case 'match_play':            gameMap = computeMatchPlay(game, data.bracketMatches); break
       default:                      gameMap = computeBracket(game, teams, data.bracketMatches, fixed); break
     }
+    // Compute per-game rank (ties share the same rank)
+    const sorted = [...teams].sort((a, b) => (gameMap.get(b.id) ?? 0) - (gameMap.get(a.id) ?? 0))
+    const gameRankMap = new Map<string, number>()
+    let gr = 1
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && (gameMap.get(sorted[i].id) ?? 0) !== (gameMap.get(sorted[i - 1].id) ?? 0)) gr = i + 1
+      gameRankMap.set(sorted[i].id, gr)
+    }
+    const hasResults = gameMap.size > 0
     for (const team of teams) {
-      const score = gameMap.get(team.id) ?? 0
-      teamScores.get(team.id)!.push({ game_id: game.id, game_name: game.name, score })
+      const raw = gameMap.get(team.id) ?? 0
+      const score = hasResults ? Math.max(1, raw) : 0
+      teamScores.get(team.id)!.push({ game_id: game.id, game_name: game.name, score, game_rank: gameRankMap.get(team.id) ?? 0 })
     }
   }
 
@@ -143,5 +221,10 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
   }))
 
   entries.sort((a, b) => b.total_score - a.total_score || a.team_name.localeCompare(b.team_name))
-  return entries.map((e, i) => ({ ...e, rank: i + 1 }))
+  let rank = 1
+  let denseRank = 0
+  return entries.map((e, i, arr) => {
+    if (i === 0 || e.total_score !== arr[i - 1].total_score) { denseRank++; rank = denseRank }
+    return { ...e, rank }
+  })
 }

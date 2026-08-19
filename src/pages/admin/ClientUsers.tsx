@@ -3,21 +3,23 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
 import type { UserRole } from '../../types'
+import AdminHeader from '../../components/AdminHeader'
 import '../../styles/admin.css'
 import '../../styles/workspace.css'
 
-export default function ClientUsers() {
-  const { clientId } = useParams<{ clientId: string }>()
+export default function OrgUsers() {
+  const { orgId } = useParams<{ orgId: string }>()
   const navigate = useNavigate()
-  const clients = useStore(s => s.clients)
+
+  const organizations = useStore(s => s.organizations)
   const users = useStore(s => s.users)
   const role = useStore(s => s.currentRole)
   const addUser = useStore(s => s.addUser)
   const updateUser = useStore(s => s.updateUser)
   const deleteUser = useStore(s => s.deleteUser)
 
-  const client = clients.find(c => c.id === clientId)
-  const clientUsers = users.filter(u => u.client_id === clientId)
+  const org = organizations.find(o => o.id === orgId)
+  const orgUsers = users.filter(u => u.organization_id === orgId)
 
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -26,7 +28,7 @@ export default function ClientUsers() {
   const [pin, setPin] = useState('')
   const [userRole, setUserRole] = useState<UserRole>('data_collector')
 
-  if (!client) { navigate(-1); return null }
+  if (!org) { navigate(-1); return null }
   if (role !== 'super_admin' && role !== 'client_admin') { navigate('/login'); return null }
 
   function openAdd() {
@@ -44,34 +46,31 @@ export default function ClientUsers() {
     if (editingId) {
       updateUser(editingId, { display_name: displayName.trim(), username: username.trim(), pin: pin.trim(), role: userRole })
     } else {
-      addUser({ client_id: clientId!, display_name: displayName.trim(), username: username.trim(), pin: pin.trim(), role: userRole })
+      addUser({ organization_id: orgId!, display_name: displayName.trim(), username: username.trim(), pin: pin.trim(), role: userRole })
     }
     setShowForm(false)
   }
 
   return (
     <div className="admin-root">
-      <header className="admin-header">
-        <div className="admin-breadcrumb">
-          <button className="breadcrumb-btn" onClick={() => navigate(`/admin/${clientId}`)}>
-            {client.name}
-          </button>
-          <span className="breadcrumb-sep">›</span>
-          <span className="breadcrumb-current">Users</span>
-        </div>
-        <div className="admin-header-right">
-          <button className="admin-add-btn sm" onClick={openAdd}>+ User</button>
-        </div>
-      </header>
+      <AdminHeader
+        orgName={org.name}
+        crumbs={[
+          { label: 'Clients', to: `/admin/orgs/${orgId}` },
+          { label: 'Users' },
+        ]}
+      >
+        <button className="admin-add-btn sm" onClick={openAdd}>+ User</button>
+      </AdminHeader>
 
       <div className="dash-body">
-        {clientUsers.length === 0 && (
+        {orgUsers.length === 0 && (
           <div className="dash-empty">
-            <p>No users yet for this client.</p>
+            <p>No users yet for {org.name}.</p>
           </div>
         )}
 
-        {clientUsers.map(u => (
+        {orgUsers.map(u => (
           <motion.div
             key={u.id}
             className="user-card"

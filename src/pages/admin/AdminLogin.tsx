@@ -43,21 +43,11 @@ export default function AdminLogin() {
     routeUser(user)
   }
 
-  function routeUser(user: { role: string; client_id: string | null }) {
+  function routeUser(user: { role: string; organization_id: string | null }) {
     if (user.role === 'super_admin') {
-      navigate('/admin/clients')
-    } else if (user.role === 'client_admin') {
-      navigate(`/admin/${user.client_id}`)
+      navigate('/admin/orgs')
     } else {
-      const editions = store.editions
-      const events = store.events.filter(ev => ev.client_id === user.client_id)
-      const eventIds = events.map(ev => ev.id)
-      const activeEdition = editions.find(ed => eventIds.includes(ed.event_id) && ed.status === 'active')
-      if (activeEdition) {
-        navigate(`/admin/${user.client_id}/edition/${activeEdition.id}`)
-      } else {
-        navigate(`/admin/${user.client_id}`)
-      }
+      navigate(`/admin/orgs/${user.organization_id}`)
     }
   }
 

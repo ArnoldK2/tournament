@@ -54,8 +54,9 @@ create table if not exists games (
   id uuid primary key default gen_random_uuid(),
   edition_id uuid not null references editions(id) on delete cascade,
   name text not null,
-  type text not null check (type in ('standard','points','multi_participant','cumulative','bracket_single','bracket_double','bracket_round_robin')),
+  type text not null check (type in ('standard','points','multi_participant','participant_attempts','cumulative','bracket_single','bracket_double','bracket_round_robin','match_play','completion','tally','lives','head_to_head')),
   scoring_direction text not null default 'higher_is_better' check (scoring_direction in ('lower_is_better','higher_is_better')),
+  scoring_mode text not null default 'dynamic' check (scoring_mode in ('dynamic','fixed')),
   weight numeric not null default 1,
   status text not null default 'pending' check (status in ('pending','active','completed')),
   "order" integer not null default 0,
@@ -151,10 +152,22 @@ create table if not exists participant_attempt_results (
 );
 alter table participant_attempt_results disable row level security;
 
+-- ── Game Participants ────────────────────────────────────────
+create table if not exists game_participants (
+  id uuid primary key default gen_random_uuid(),
+  game_id uuid not null references games(id) on delete cascade,
+  team_id uuid not null references teams(id) on delete cascade,
+  name text not null default '',
+  sort_order integer not null default 0
+);
+alter table game_participants disable row level security;
+
 -- ── New columns (run as migration if tables already exist) ──
 alter table games
   add column if not exists participants_per_team integer default 1,
-  add column if not exists attempts_per_participant integer default 1;
+  add column if not exists attempts_per_participant integer default 1,
+  add column if not exists is_fun boolean default false,
+  add column if not exists started_at timestamptz;
 
 alter table editions
   add column if not exists scoring_mode text default 'dynamic'

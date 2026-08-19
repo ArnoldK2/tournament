@@ -28,15 +28,20 @@ function buildFrames(editionId: string, store: AppState): Frame[] {
   const games = store.games
     .filter(g => g.edition_id === editionId && g.status === 'completed' && !g.is_fun)
     .sort((a, b) => {
+      // Primary: when the game was started (most reliable play-order signal)
+      const sa = a.started_at ? new Date(a.started_at).getTime() : Infinity
+      const sb = b.started_at ? new Date(b.started_at).getTime() : Infinity
+      if (sa !== sb) return sa - sb
+      // Fallback: last result entry time (for games without started_at)
       const ta = lastResultTime(a.id, store)
       const tb = lastResultTime(b.id, store)
       if (ta !== tb) return ta - tb
-      return a.order - b.order  // fallback to intended order if timestamps match
+      return a.order - b.order
     })
   const edition = store.editions.find(e => e.id === editionId)
   const event = store.events.find(e => e.id === edition?.event_id)
   const client = store.clients.find(c => c.id === event?.client_id)
-  const teams = store.teams.filter(t => t.client_id === client?.id)
+  const teams = store.teams.filter(t => t.event_id === event?.id)
   if (!games.length || !teams.length) return []
 
   const frames: Frame[] = []
@@ -45,7 +50,6 @@ function buildFrames(editionId: string, store: AppState): Frame[] {
     const lb = computeLeaderboard({
       games: gamesUpTo,
       teams,
-      scoringMode: edition?.scoring_mode ?? 'dynamic',
       standardResults: store.standardResults,
       pointsResults: store.pointsResults,
       participantResults: store.participantResults,

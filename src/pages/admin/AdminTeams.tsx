@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
+import AdminHeader from '../../components/AdminHeader'
 import '../../styles/admin.css'
 
 const PRESET_COLORS = [
@@ -11,17 +12,21 @@ const PRESET_COLORS = [
 ]
 
 export default function AdminTeams() {
-  const { clientId } = useParams<{ clientId: string }>()
+  const { clientId, eventId } = useParams<{ clientId: string; eventId: string }>()
   const navigate = useNavigate()
 
   const clients = useStore(s => s.clients)
+  const events = useStore(s => s.events)
+  const organizations = useStore(s => s.organizations)
   const allTeams = useStore(s => s.teams)
   const addTeam = useStore(s => s.addTeam)
   const updateTeam = useStore(s => s.updateTeam)
   const deleteTeam = useStore(s => s.deleteTeam)
 
   const client = clients.find(c => c.id === clientId)
-  const teams = allTeams.filter(t => t.client_id === clientId)
+  const org = organizations.find(o => o.id === client?.organization_id)
+  const event = events.find(e => e.id === eventId)
+  const teams = allTeams.filter(t => t.event_id === eventId)
 
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -38,23 +43,23 @@ export default function AdminTeams() {
   function save() {
     if (!name.trim()) return
     if (editId) updateTeam(editId, { name: name.trim(), color, is_fun: isFun })
-    else addTeam({ client_id: clientId!, name: name.trim(), color, is_fun: isFun })
+    else addTeam({ event_id: eventId!, name: name.trim(), color, is_fun: isFun })
     setShowForm(false)
   }
 
   return (
     <div className="admin-root">
-      <header className="admin-header">
-        <div>
-          <p className="admin-client-name">{client?.name}</p>
-          <h1 className="admin-page-title">Teams</h1>
-        </div>
-        <button className="admin-back-btn" onClick={() => navigate(`/admin/${clientId}`)}>← Dashboard</button>
-      </header>
+      <AdminHeader
+        orgName={org?.name}
+        crumbs={[
+          { label: 'Clients', to: `/admin/orgs/${client?.organization_id}` },
+          { label: client?.name ?? '', to: `/admin/${clientId}` },
+          { label: event?.name ?? '' },
+          { label: 'Teams' },
+        ]}
+      />
 
       <div className="admin-body">
-        <p className="re-hint">Teams are shared across all events for this organisation.</p>
-
         <div className="admin-list">
           {teams.map(team => (
             <motion.div key={team.id} className="admin-list-row" layout initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} style={{ '--team-color': team.color } as React.CSSProperties}>
@@ -69,7 +74,7 @@ export default function AdminTeams() {
               </div>
             </motion.div>
           ))}
-          {teams.length === 0 && <p className="admin-empty">No teams yet.</p>}
+          {teams.length === 0 && <p className="admin-empty">No teams yet for this event.</p>}
         </div>
 
         <button className="admin-add-btn" onClick={openAdd}>+ Add Team</button>

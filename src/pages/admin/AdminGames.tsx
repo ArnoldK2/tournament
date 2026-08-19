@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
+import { editionStatus } from '../../lib/editionStatus'
 import AdminShell from './AdminShell'
 import type { GameType, ScoringDirection } from '../../types'
 import '../../styles/admin.css'
@@ -31,7 +32,7 @@ export default function AdminGames() {
 
   const clientEvents = events.filter(e => e.client_id === clientId)
   const [selectedEditionId, setSelectedEditionId] = useState<string>(() => {
-    const active = editions.find(e => clientEvents.some(ev => ev.id === e.event_id) && e.status === 'active')
+    const active = editions.find(e => clientEvents.some(ev => ev.id === e.event_id) && editionStatus(e.date) === 'active')
     return active?.id ?? editions.find(e => clientEvents.some(ev => ev.id === e.event_id))?.id ?? ''
   })
 

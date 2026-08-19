@@ -60,13 +60,26 @@ function UpdateFlash({ message }: { message: string | null }) {
   )
 }
 
+function ordinal(n: number) {
+  if (n === 1) return '1st'
+  if (n === 2) return '2nd'
+  if (n === 3) return '3rd'
+  return `${n}th`
+}
+
 function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
   return (
     <div className="lb-breakdown">
       {entry.game_scores.map(g => (
         <div key={g.game_id} className="lb-breakdown-row">
           <span className="lb-breakdown-name">{g.game_name}</span>
-          <span className="lb-breakdown-score">{g.score > 0 ? `+${g.score}` : '—'}</span>
+          {g.score > 0
+            ? <>
+                <span className="lb-breakdown-rank">{ordinal(g.game_rank)}</span>
+                <span className="lb-breakdown-score">+{Math.round(g.score * 10) / 10}</span>
+              </>
+            : <span className="lb-breakdown-score">—</span>
+          }
         </div>
       ))}
       {entry.game_scores.length === 0 && (
@@ -194,7 +207,7 @@ export default function Leaderboard() {
   const edition = useMemo(() => editions.find(e => e.id === editionId), [editions, editionId])
   const event = useMemo(() => events.find(e => e.id === edition?.event_id), [events, edition])
   const client = useMemo(() => clients.find(c => c.id === event?.client_id), [clients, event])
-  const teams = useMemo(() => allTeams.filter(t => t.client_id === client?.id), [allTeams, client])
+  const teams = useMemo(() => allTeams.filter(t => t.event_id === event?.id), [allTeams, event])
   const games = useMemo(
     () => allGames.filter(g => g.edition_id === editionId).sort((a, b) => a.order - b.order),
     [allGames, editionId]
@@ -218,7 +231,7 @@ export default function Leaderboard() {
   const entries = useMemo(() => {
     if (!teams.length || !games.length) return []
     const computed = computeLeaderboard({
-      games, teams, scoringMode: edition?.scoring_mode ?? 'dynamic',
+      games, teams,
       standardResults, pointsResults,
       participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
     })

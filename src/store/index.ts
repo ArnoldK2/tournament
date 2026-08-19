@@ -3,10 +3,11 @@ import { supabase } from '../lib/supabase'
 import type {
   Client, TournamentEvent, Team, Edition, Game,
   StandardResult, PointsResult, ParticipantResult, ParticipantAttemptResult,
-  CumulativeRound, BracketMatch, User, GameParticipant,
+  CumulativeRound, BracketMatch, User, GameParticipant, Organization,
 } from '../types'
 
 interface AppState {
+  organizations: Organization[]
   clients: Client[]
   events: TournamentEvent[]
   teams: Team[]
@@ -25,12 +26,14 @@ interface AppState {
   loadData: () => Promise<void>
 
   currentUserId: string | null
-  currentClientId: string | null
+  currentOrgId: string | null
   currentRole: 'guest' | 'client_admin' | 'data_collector' | 'super_admin'
 
   login: (username: string, pin: string) => Promise<boolean>
   logout: () => void
   currentUser: () => User | null
+
+  addOrganization: (data: Omit<Organization, 'id'>) => Promise<void>
 
   addClient: (data: Omit<Client, 'id'>) => Promise<void>
   updateClient: (id: string, data: Partial<Client>) => Promise<void>
@@ -55,8 +58,10 @@ interface AppState {
   saveParticipantResults: (gameId: string, results: { team_id: string; participant_name: string; position: number }[]) => Promise<void>
   saveParticipantAttemptResults: (gameId: string, results: Omit<ParticipantAttemptResult, 'id'>[]) => Promise<void>
   addCumulativeRound: (gameId: string, scores: { team_id: string; score: number }[]) => Promise<void>
+  clearCumulativeRounds: (gameId: string) => Promise<void>
   saveBracketMatch: (match: Omit<BracketMatch, 'id'>) => Promise<void>
   updateBracketMatch: (id: string, data: Partial<BracketMatch>) => Promise<void>
+  deleteBracketMatch: (id: string) => Promise<void>
 
   addUser: (data: Omit<User, 'id'>) => Promise<void>
   updateUser: (id: string, data: Partial<User>) => Promise<void>
@@ -72,6 +77,7 @@ interface AppState {
 export type { AppState }
 
 export const useStore = create<AppState>((set, get) => ({
+  organizations: [],
   clients: [],
   events: [],
   teams: [],
@@ -90,6 +96,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   loadData: async () => {
     const [
+      { data: organizations },
       { data: clients },
       { data: events },
       { data: teams },
@@ -104,6 +111,7 @@ export const useStore = create<AppState>((set, get) => ({
       { data: gameParticipants },
       { data: users },
     ] = await Promise.all([
+      supabase.from('organizations').select('*').order('name'),
       supabase.from('clients').select('*'),
       supabase.from('events').select('*'),
       supabase.from('teams').select('*'),
@@ -120,11 +128,12 @@ export const useStore = create<AppState>((set, get) => ({
     ])
 
     set({
-      clients: (clients ?? []).map(r => ({ id: r.id, name: r.name, slug: r.slug, logo_color: r.logo_color })),
+      organizations: (organizations ?? []).map(r => ({ id: r.id, name: r.name, slug: r.slug })),
+      clients: (clients ?? []).map(r => ({ id: r.id, organization_id: r.organization_id, name: r.name, slug: r.slug, logo_color: r.logo_color })),
       events: (events ?? []).map(r => ({ id: r.id, client_id: r.client_id, name: r.name, description: r.description })),
-      teams: (teams ?? []).map(r => ({ id: r.id, client_id: r.client_id, name: r.name, color: r.color, is_fun: r.is_fun ?? false })),
+      teams: (teams ?? []).map(r => ({ id: r.id, event_id: r.event_id, name: r.name, color: r.color, is_fun: r.is_fun ?? false })),
       editions: (editions ?? []).map(r => ({ id: r.id, event_id: r.event_id, label: r.label, date: r.date, status: r.status, scoring_mode: r.scoring_mode ?? 'dynamic' })),
-      games: (games ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1, is_fun: r.is_fun ?? false })),
+      games: (games ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, scoring_mode: r.scoring_mode ?? 'dynamic', weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1, is_fun: r.is_fun ?? false, started_at: r.started_at ?? undefined })),
       standardResults: (standardResults ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, position: r.position })),
       pointsResults: (pointsResults ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, raw_score: r.raw_score })),
       participantResults: (participantResults ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, participant_name: r.participant_name, position: r.position })),
@@ -132,7 +141,7 @@ export const useStore = create<AppState>((set, get) => ({
       cumulativeRounds: (cumulativeRounds ?? []).map(r => ({ id: r.id, game_id: r.game_id, round_number: r.round_number, scores: r.scores })),
       bracketMatches: (bracketMatches ?? []).map(r => ({ id: r.id, game_id: r.game_id, round: r.round, match_number: r.match_number, team_a_id: r.team_a_id, team_b_id: r.team_b_id, score_a: r.score_a, score_b: r.score_b, winner_id: r.winner_id, loser_bracket: r.loser_bracket })),
       gameParticipants: (gameParticipants ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, name: r.name, sort_order: r.sort_order })),
-      users: (users ?? []).map(r => ({ id: r.id, client_id: r.client_id, username: r.username, pin: r.pin, role: r.role, display_name: r.display_name })),
+      users: (users ?? []).map(r => ({ id: r.id, organization_id: r.organization_id, username: r.username, pin: r.pin, role: r.role, display_name: r.display_name })),
       loaded: true,
       // Restore session from localStorage if present
       ...(() => {
@@ -146,7 +155,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   currentUserId: null,
-  currentClientId: null,
+  currentOrgId: null,
   currentRole: 'guest',
 
   login: async (username, pin) => {
@@ -157,7 +166,7 @@ export const useStore = create<AppState>((set, get) => ({
       .eq('pin', pin)
       .single()
     if (!data) return false
-    const session = { currentUserId: data.id, currentClientId: data.client_id, currentRole: data.role }
+    const session = { currentUserId: data.id, currentOrgId: data.organization_id, currentRole: data.role }
     localStorage.setItem('tt_session', JSON.stringify(session))
     set(session)
     return true
@@ -165,7 +174,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   logout: () => {
     localStorage.removeItem('tt_session')
-    set({ currentUserId: null, currentClientId: null, currentRole: 'guest' })
+    set({ currentUserId: null, currentOrgId: null, currentRole: 'guest' })
   },
 
   currentUser: () => {
@@ -173,9 +182,14 @@ export const useStore = create<AppState>((set, get) => ({
     return users.find(u => u.id === currentUserId) ?? null
   },
 
+  addOrganization: async (data) => {
+    const { data: row } = await supabase.from('organizations').insert(data).select().single()
+    if (row) set(s => ({ organizations: [...s.organizations, { id: row.id, name: row.name, slug: row.slug }] }))
+  },
+
   addClient: async (data) => {
     const { data: row } = await supabase.from('clients').insert(data).select().single()
-    if (row) set(s => ({ clients: [...s.clients, { id: row.id, name: row.name, slug: row.slug, logo_color: row.logo_color }] }))
+    if (row) set(s => ({ clients: [...s.clients, { id: row.id, organization_id: row.organization_id, name: row.name, slug: row.slug, logo_color: row.logo_color }] }))
   },
 
   updateClient: async (id, data) => {
@@ -195,7 +209,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   addTeam: async (data) => {
     const { data: row } = await supabase.from('teams').insert(data).select().single()
-    if (row) set(s => ({ teams: [...s.teams, { id: row.id, client_id: row.client_id, name: row.name, color: row.color }] }))
+    if (row) set(s => ({ teams: [...s.teams, { id: row.id, event_id: row.event_id, name: row.name, color: row.color, is_fun: row.is_fun ?? false }] }))
   },
 
   updateTeam: async (id, data) => {
@@ -220,7 +234,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   addGame: async (data) => {
     const { data: row } = await supabase.from('games').insert(data).select().single()
-    if (row) set(s => ({ games: [...s.games, { id: row.id, edition_id: row.edition_id, name: row.name, type: row.type, scoring_direction: row.scoring_direction, weight: row.weight, status: row.status, order: row.order, participants_per_team: row.participants_per_team ?? 1, attempts_per_participant: row.attempts_per_participant ?? 1, is_fun: row.is_fun ?? false }] }))
+    if (row) set(s => ({ games: [...s.games, { id: row.id, edition_id: row.edition_id, name: row.name, type: row.type, scoring_direction: row.scoring_direction, scoring_mode: row.scoring_mode ?? 'dynamic', weight: row.weight, status: row.status, order: row.order, participants_per_team: row.participants_per_team ?? 1, attempts_per_participant: row.attempts_per_participant ?? 1, is_fun: row.is_fun ?? false }] }))
   },
 
   updateGame: async (id, data) => {
@@ -238,7 +252,7 @@ export const useStore = create<AppState>((set, get) => ({
     const existing = get().games.filter(g => g.edition_id === toEditionId)
     const newGames = source
       .filter(g => !existing.some(e => e.name === g.name))
-      .map(g => ({ edition_id: toEditionId, name: g.name, type: g.type, scoring_direction: g.scoring_direction, weight: g.weight, status: 'pending' as const, order: g.order, participants_per_team: g.participants_per_team ?? 1, attempts_per_participant: g.attempts_per_participant ?? 1 }))
+      .map(g => ({ edition_id: toEditionId, name: g.name, type: g.type, scoring_direction: g.scoring_direction, scoring_mode: g.scoring_mode, weight: g.weight, status: 'pending' as const, order: g.order, participants_per_team: g.participants_per_team ?? 1, attempts_per_participant: g.attempts_per_participant ?? 1 }))
     if (newGames.length === 0) return
     const { data: rows } = await supabase.from('games').insert(newGames).select()
     if (rows) set(s => ({ games: [...s.games, ...rows.map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1, is_fun: r.is_fun ?? false }))] }))
@@ -304,6 +318,11 @@ export const useStore = create<AppState>((set, get) => ({
     if (row) set(s => ({ cumulativeRounds: [...s.cumulativeRounds, { id: row.id, game_id: row.game_id, round_number: row.round_number, scores: row.scores }] }))
   },
 
+  clearCumulativeRounds: async (gameId) => {
+    await supabase.from('cumulative_rounds').delete().eq('game_id', gameId)
+    set(s => ({ cumulativeRounds: s.cumulativeRounds.filter(r => r.game_id !== gameId) }))
+  },
+
   saveBracketMatch: async (match) => {
     const { data: row } = await supabase.from('bracket_matches').insert(match).select().single()
     if (row) set(s => ({ bracketMatches: [...s.bracketMatches, { id: row.id, game_id: row.game_id, round: row.round, match_number: row.match_number, team_a_id: row.team_a_id, team_b_id: row.team_b_id, score_a: row.score_a, score_b: row.score_b, winner_id: row.winner_id, loser_bracket: row.loser_bracket }] }))
@@ -314,9 +333,14 @@ export const useStore = create<AppState>((set, get) => ({
     set(s => ({ bracketMatches: s.bracketMatches.map(m => m.id === id ? { ...m, ...data } : m) }))
   },
 
+  deleteBracketMatch: async (id) => {
+    await supabase.from('bracket_matches').delete().eq('id', id)
+    set(s => ({ bracketMatches: s.bracketMatches.filter(m => m.id !== id) }))
+  },
+
   addUser: async (data) => {
     const { data: row } = await supabase.from('users').insert(data).select().single()
-    if (row) set(s => ({ users: [...s.users, { id: row.id, client_id: row.client_id, username: row.username, pin: row.pin, role: row.role, display_name: row.display_name }] }))
+    if (row) set(s => ({ users: [...s.users, { id: row.id, organization_id: row.organization_id, username: row.username, pin: row.pin, role: row.role, display_name: row.display_name }] }))
   },
 
   updateUser: async (id, data) => {
@@ -403,7 +427,7 @@ export const useStore = create<AppState>((set, get) => ({
       ],
       games: [
         ...s.games.filter(g => g.edition_id !== editionId),
-        ...(gm ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1, is_fun: r.is_fun ?? false })),
+        ...(gm ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, scoring_mode: r.scoring_mode ?? 'dynamic', weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1, is_fun: r.is_fun ?? false })),
       ],
     }))
   },

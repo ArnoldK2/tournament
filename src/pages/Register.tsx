@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
@@ -13,15 +13,14 @@ export default function Register() {
   const editions = useStore(s => s.editions)
   const events = useStore(s => s.events)
   const clients = useStore(s => s.clients)
-  const teams = useStore(s => s.teams)
 
   const edition = editions.find(e => e.id === editionId)
   const event = events.find(e => e.id === edition?.event_id)
   const client = clients.find(c => c.id === event?.client_id)
-  const houses = useMemo(() => teams.filter(t => t.client_id === client?.id), [teams, client])
 
   const [name, setName] = useState('')
-  const [house, setHouse] = useState('')
+  const [department, setDepartment] = useState('')
+  const [teamName, setTeamName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
@@ -65,7 +64,8 @@ export default function Register() {
     const { error: err } = await supabase.from('audience_registrations').insert({
       edition_id: editionId,
       name: name.trim(),
-      house,
+      department: department.trim(),
+      team_name: teamName.trim(),
       source,
     })
 
@@ -145,27 +145,30 @@ export default function Register() {
           required
         />
 
-        <label className="aud-label">House</label>
-        <div className="aud-houses">
-          {houses.map(h => (
-            <button
-              key={h.id}
-              type="button"
-              className={`aud-house-btn ${house === h.name ? 'active' : ''}`}
-              style={{ '--hc': h.color } as React.CSSProperties}
-              onClick={() => setHouse(h.name)}
-            >
-              {h.name}
-            </button>
-          ))}
-        </div>
+        <label className="aud-label">Department *</label>
+        <input
+          className="aud-input"
+          value={department}
+          onChange={e => setDepartment(e.target.value)}
+          placeholder="e.g. Finance, Engineering"
+          required
+        />
+
+        <label className="aud-label">Team Name *</label>
+        <input
+          className="aud-input"
+          value={teamName}
+          onChange={e => setTeamName(e.target.value)}
+          placeholder="Your team name"
+          required
+        />
 
         {error && <p className="aud-error">{error}</p>}
 
         <button
           type="submit"
           className="aud-submit"
-          disabled={!name.trim() || submitting}
+          disabled={!name.trim() || !department.trim() || !teamName.trim() || submitting}
         >
           {submitting ? 'Registering...' : 'Register →'}
         </button>

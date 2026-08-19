@@ -191,6 +191,11 @@
   gap: 1rem;
 }
 
+/* Back button — mobile only */
+.ah-back-btn {
+  display: none;
+}
+
 .admin-client-name {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -478,15 +483,15 @@
 .modal-input:focus { border-color: var(--admin-accent); }
 
 .color-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 .color-swatch {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   border: 2px solid transparent;
   cursor: pointer;
   transition: transform 0.1s, border-color 0.1s;
@@ -676,10 +681,21 @@
   justify-content: space-between;
 }
 
+.sa-cc-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
 .sa-cc-name {
   font-size: 1.05rem;
   font-weight: 700;
   margin: 0;
+}
+.sa-cc-slug {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.35);
+  font-family: monospace;
+  letter-spacing: 0.02em;
 }
 
 .sa-cc-arrow {
@@ -693,6 +709,34 @@
   font-size: 0.78rem;
   color: var(--admin-sub);
   margin: 0;
+}
+
+.sa-cc-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--admin-sub);
+}
+
+.sa-cc-stat {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.sa-cc-stat.active {
+  background: rgba(34,197,94,0.15);
+  color: #4ade80;
+}
+.sa-cc-stat.upcoming {
+  background: rgba(99,102,241,0.15);
+  color: #818cf8;
+}
+.sa-cc-stat.completed {
+  background: rgba(255,255,255,0.07);
+  color: var(--admin-sub);
 }
 
 /* ── User cards ─────────────────────────────────────────── */
@@ -818,8 +862,221 @@
 }
 .icon-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
 
+.ew-leaderboard-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid rgba(99,102,241,0.4);
+  background: rgba(99,102,241,0.12);
+  color: #a5b4fc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ew-leaderboard-btn:hover {
+  background: rgba(99,102,241,0.25);
+  border-color: rgba(99,102,241,0.7);
+  color: #fff;
+}
+
 .admin-add-btn.sm {
   padding: 0.45rem 1rem;
   font-size: 0.8rem;
   border-radius: 8px;
+}
+
+/* ── Org tab bar ───────────────────────────────────────────── */
+.org-tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.75rem 1.5rem 0;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.org-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--admin-sub);
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+}
+.org-tab:hover { color: #fff; }
+.org-tab.active {
+  color: #fff;
+  border-bottom-color: #818cf8;
+  font-weight: 600;
+}
+
+.org-tab-count {
+  font-size: 0.72rem;
+  background: rgba(255,255,255,0.1);
+  color: var(--admin-sub);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.org-tab.active .org-tab-count {
+  background: rgba(129,140,248,0.2);
+  color: #818cf8;
+}
+
+/* ── AdminHeader breadcrumbs ───────────────────────────────── */
+.ah-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.ah-org {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.ah-breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+.ah-crumb-item {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.ah-sep {
+  color: rgba(255,255,255,0.2);
+  font-size: 0.7rem;
+  padding: 0 0.1rem;
+}
+
+.ah-crumb-link {
+  font-size: 0.72rem;
+  color: var(--admin-sub);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.ah-crumb-link:hover { color: #fff; }
+
+.ah-crumb-current {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.ah-crumb-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+.ah-crumb-badge.status-upcoming  { background: rgba(234,179,8,0.15);  color: #fbbf24; }
+.ah-crumb-badge.status-active    { background: rgba(34,197,94,0.15);  color: #4ade80; }
+.ah-crumb-badge.status-completed { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+
+/* ── AdminUserInfo ─────────────────────────────────────────── */
+.aui-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.aui-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  line-height: 1;
+}
+
+.aui-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.aui-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.aui-org {
+  font-size: 0.72rem;
+  color: var(--admin-sub);
+}
+
+.aui-role {
+  font-size: 0.68rem;
+  padding: 0.15rem 0.5rem;
+}
+
+.aui-exit-btn {
+  background: none;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-sub);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.aui-exit-btn:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.06);
+}
+
+/* ── Mobile responsive ─────────────────────────────────────── */
+@media (max-width: 720px) {
+  .admin-header {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .ah-org { display: none; }
+  .ah-breadcrumbs { display: none; }
+  .ah-back-btn {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    gap: 0.3rem;
+  }
+  .ah-back-btn:hover { color: #fff; }
+  .aui-name, .aui-meta { display: none; }
+  .ew-leaderboard-btn span { display: none; }
+  .admin-header-right {
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
 }

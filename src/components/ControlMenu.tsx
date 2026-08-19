@@ -48,6 +48,7 @@ export default function ControlMenu({ editionId, currentView, role, newTab = fal
   }
 
   const isAdmin = role === 'client_admin' || role === 'super_admin'
+  const canSeeViews = isAdmin || role === 'data_collector'
 
   return (
     <div className="cm-wrap">
@@ -70,22 +71,26 @@ export default function ControlMenu({ editionId, currentView, role, newTab = fal
               exit={{ opacity: 0, scale: 0.95, y: -6 }}
               transition={{ duration: 0.15 }}
             >
-              <p className="cm-section-label">Views</p>
-              {VIEWS.map(v => (
-                <button
-                  key={v.key}
-                  className={`cm-item ${currentView === v.key ? 'current' : ''}`}
-                  onClick={() => go(v.path(editionId))}
-                >
-                  <span className="cm-icon">{v.icon}</span>
-                  <span className="cm-label">{v.label}</span>
-                  {currentView === v.key && <span className="cm-check">✓</span>}
-                </button>
-              ))}
-
               {isAdmin && (
                 <>
-                  <div className="cm-divider" />
+                  <p className="cm-section-label">Views</p>
+                  {VIEWS.map(v => (
+                    <button
+                      key={v.key}
+                      className={`cm-item ${currentView === v.key ? 'current' : ''}`}
+                      onClick={() => go(v.path(editionId))}
+                    >
+                      <span className="cm-icon">{v.icon}</span>
+                      <span className="cm-label">{v.label}</span>
+                      {currentView === v.key && <span className="cm-check">✓</span>}
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {canSeeViews && (
+                <>
+                  {isAdmin && <div className="cm-divider" />}
                   <p className="cm-section-label">Admin</p>
                   {ADMIN_VIEWS.map(v => (
                     <button
@@ -99,7 +104,7 @@ export default function ControlMenu({ editionId, currentView, role, newTab = fal
                     </button>
                   ))}
 
-                  {onExport && (
+                  {isAdmin && onExport && (
                     <>
                       <div className="cm-divider" />
                       <button className="cm-item" onClick={() => { onExport(); setOpen(false) }}>

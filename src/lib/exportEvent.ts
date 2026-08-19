@@ -34,7 +34,7 @@ async function fetchExportData(
   cumulativeRounds: CumulativeRound[], bracketMatches: BracketMatch[],
 ): Promise<ExportData> {
   const leaderboard = computeLeaderboard({
-    games, teams, scoringMode: edition.scoring_mode ?? 'dynamic',
+    games, teams,
     standardResults, pointsResults,
     participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
   })

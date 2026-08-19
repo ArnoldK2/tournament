@@ -2,15 +2,22 @@ export type UserRole = 'super_admin' | 'client_admin' | 'data_collector'
 
 export interface User {
   id: string
-  client_id: string | null
+  organization_id: string | null
   username: string
   pin: string
   role: UserRole
   display_name: string
 }
 
+export interface Organization {
+  id: string
+  name: string
+  slug: string
+}
+
 export interface Client {
   id: string
+  organization_id: string
   name: string
   slug: string
   logo_color: string
@@ -26,7 +33,7 @@ export interface TournamentEvent {
 // Teams belong to the CLIENT, shared across all their events/editions
 export interface Team {
   id: string
-  client_id: string
+  event_id: string
   name: string
   color: string
   is_fun?: boolean
@@ -50,6 +57,11 @@ export type GameType =
   | 'bracket_single'
   | 'bracket_double'
   | 'bracket_round_robin'
+  | 'match_play'
+  | 'completion'
+  | 'tally'
+  | 'lives'
+  | 'head_to_head'
 
 export type ScoringDirection = 'lower_is_better' | 'higher_is_better'
 
@@ -59,12 +71,14 @@ export interface Game {
   name: string
   type: GameType
   scoring_direction: ScoringDirection
+  scoring_mode: 'dynamic' | 'fixed'
   weight: number
   status: 'pending' | 'active' | 'completed'
   order: number
   participants_per_team?: number
   attempts_per_participant?: number
   is_fun?: boolean
+  started_at?: string
 }
 
 export interface ParticipantAttemptResult {
@@ -159,5 +173,5 @@ export interface LeaderboardEntry {
   total_score: number
   rank: number
   prev_rank?: number
-  game_scores: { game_id: string; game_name: string; score: number }[]
+  game_scores: { game_id: string; game_name: string; score: number; game_rank: number }[]
 }

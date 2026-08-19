@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
+import { editionStatus } from '../../lib/editionStatus'
+import AdminHeader from '../../components/AdminHeader'
 import '../../styles/admin.css'
 import '../../styles/workspace.css'
 
@@ -12,12 +14,13 @@ export default function ClientDashboard() {
   const clients = useStore(s => s.clients)
   const events = useStore(s => s.events)
   const editions = useStore(s => s.editions)
+  const organizations = useStore(s => s.organizations)
   const role = useStore(s => s.currentRole)
-  const logout = useStore(s => s.logout)
   const addEvent = useStore(s => s.addEvent)
   const addEdition = useStore(s => s.addEdition)
 
   const client = clients.find(c => c.id === clientId)
+  const org = organizations.find(o => o.id === client?.organization_id)
   const clientEvents = events.filter(e => e.client_id === clientId)
 
   const [showEventForm, setShowEventForm] = useState(false)
@@ -47,27 +50,13 @@ export default function ClientDashboard() {
 
   return (
     <div className="admin-root">
-      <header className="admin-header">
-        <div>
-          <p className="admin-client-name" style={{ '--c': client.logo_color } as React.CSSProperties}>
-            <span className="al-client-dot" style={{ width: 8, height: 8 } as React.CSSProperties} /> {client.name}
-          </p>
-          <h1 className="admin-page-title">Dashboard</h1>
-        </div>
-        <div className="admin-header-right">
-          <span className="role-badge">{role === 'client_admin' ? 'Admin' : role === 'super_admin' ? 'Super' : 'Collector'}</span>
-          {(role === 'client_admin' || role === 'super_admin') && (
-            <>
-              <button className="admin-back-btn" onClick={() => navigate(`/admin/${clientId}/teams`)}>Teams</button>
-              <button className="admin-back-btn" onClick={() => navigate(`/admin/${clientId}/users`)}>Users</button>
-            </>
-          )}
-          {role === 'super_admin' && (
-            <button className="admin-back-btn" onClick={() => navigate('/admin/clients')}>← Clients</button>
-          )}
-          <button className="admin-logout" onClick={() => { logout(); navigate('/') }}>Log out</button>
-        </div>
-      </header>
+      <AdminHeader
+        orgName={org?.name}
+        crumbs={[
+          { label: 'Clients', to: `/admin/orgs/${client.organization_id}` },
+          { label: client.name },
+        ]}
+      />
 
       <div className="dash-body">
         {clientEvents.length === 0 && (
@@ -89,9 +78,14 @@ export default function ClientDashboard() {
               <div className="dash-event-header">
                 <h2 className="dash-event-name">{event.name}</h2>
                 {(role === 'client_admin' || role === 'super_admin') && (
-                  <button className="dash-add-edition" onClick={() => { setEditionEventId(event.id); setShowEditionForm(true) }}>
-                    + Edition
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className="dash-add-edition" onClick={() => navigate(`/admin/${clientId}/event/${event.id}/teams`)}>
+                      Teams
+                    </button>
+                    <button className="dash-add-edition" onClick={() => { setEditionEventId(event.id); setShowEditionForm(true) }}>
+                      + Edition
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -99,7 +93,7 @@ export default function ClientDashboard() {
                 {eventEditions.map((ed, i) => (
                   <motion.button
                     key={ed.id}
-                    className={`dash-edition-card status-${ed.status}`}
+                    className={`dash-edition-card status-${editionStatus(ed.date)}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
@@ -108,7 +102,7 @@ export default function ClientDashboard() {
                   >
                     <div className="dec-top">
                       <span className="dec-label">{ed.label}</span>
-                      <span className={`dec-status status-${ed.status}`}>{ed.status}</span>
+                      <span className={`dec-status status-${editionStatus(ed.date)}`}>{editionStatus(ed.date)}</span>
                     </div>
                     <div className="dec-date">{ed.date}</div>
                     <div className="dec-arrow">Enter →</div>
