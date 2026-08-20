@@ -845,6 +845,7 @@ function HeadToHeadEntry({ game, teams }: { game: Game; teams: Team[] }) {
   const saveBracketMatch = useStore(s => s.saveBracketMatch)
   const addCumulativeRound = useStore(s => s.addCumulativeRound)
   const clearCumulativeRounds = useStore(s => s.clearCumulativeRounds)
+  const deleteBracketMatch = useStore(s => s.deleteBracketMatch)
   const saveGameParticipants = useStore(s => s.saveGameParticipants)
   const updateGame = useStore(s => s.updateGame)
 
@@ -1013,21 +1014,31 @@ function HeadToHeadEntry({ game, teams }: { game: Game; teams: Team[] }) {
         return (
           <div key={pid} className={`hth-accordion ${expanded ? 'open' : ''} ${pairDone ? 'done' : ''}`}>
             {/* Accordion header */}
-            <button className="hth-acc-header" onClick={() => setExpandedPairId(expanded ? null : pid)}>
-              <div className="hth-acc-teams">
-                <span className="hth-tab-dot" style={{ background: tA.color }} />
-                <span className="hth-acc-name">{tA.name}</span>
-                <span className="hth-acc-score">{wA}W</span>
-                <span className="hth-acc-vs">vs</span>
-                <span className="hth-acc-score">{wB}W</span>
-                <span className="hth-acc-name">{tB.name}</span>
-                <span className="hth-tab-dot" style={{ background: tB.color }} />
-              </div>
-              <span className="hth-acc-status">
-                {pairDone ? '✓ Done' : `${rounds.filter(r => r.winnerId).length}/${totalRounds}`}
-                <span className="hth-acc-chevron">{expanded ? '▲' : '▼'}</span>
-              </span>
-            </button>
+            <div className="hth-acc-header-row">
+              <button className="hth-acc-header" onClick={() => setExpandedPairId(expanded ? null : pid)}>
+                <div className="hth-acc-teams">
+                  <span className="hth-tab-dot" style={{ background: tA.color }} />
+                  <span className="hth-acc-name">{tA.name}</span>
+                  <span className="hth-acc-score">{wA}W</span>
+                  <span className="hth-acc-vs">vs</span>
+                  <span className="hth-acc-score">{wB}W</span>
+                  <span className="hth-acc-name">{tB.name}</span>
+                  <span className="hth-tab-dot" style={{ background: tB.color }} />
+                </div>
+                <span className="hth-acc-status">
+                  {pairDone ? '✓ Done' : `${rounds.filter(r => r.winnerId).length}/${totalRounds}`}
+                  <span className="hth-acc-chevron">{expanded ? '▲' : '▼'}</span>
+                </span>
+              </button>
+              {!isComplete && (
+                <button className="mp-reset-btn" title="Remove this matchup" onClick={async () => {
+                  await deleteBracketMatch(pid)
+                  setPairRounds(p => { const n = { ...p }; delete n[pid]; return n })
+                  setActiveRoundIdx(p => { const n = { ...p }; delete n[pid]; return n })
+                  if (expandedPairId === pid) setExpandedPairId(null)
+                }}>↺</button>
+              )}
+            </div>
 
             {/* Accordion body */}
             {expanded && (
