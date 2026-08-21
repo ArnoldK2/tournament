@@ -233,12 +233,14 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addGame: async (data) => {
-    const { data: row } = await supabase.from('games').insert(data).select().single()
+    const { data: row, error } = await supabase.from('games').insert(data).select().single()
+    if (error) throw new Error(error.message)
     if (row) set(s => ({ games: [...s.games, { id: row.id, edition_id: row.edition_id, name: row.name, type: row.type, scoring_direction: row.scoring_direction, scoring_mode: row.scoring_mode ?? 'dynamic', weight: row.weight, status: row.status, order: row.order, participants_per_team: row.participants_per_team ?? 1, attempts_per_participant: row.attempts_per_participant ?? 1, is_fun: row.is_fun ?? false }] }))
   },
 
   updateGame: async (id, data) => {
-    await supabase.from('games').update(data).eq('id', id)
+    const { error } = await supabase.from('games').update(data).eq('id', id)
+    if (error) throw new Error(error.message)
     set(s => ({ games: s.games.map(g => g.id === id ? { ...g, ...data } : g) }))
   },
 
