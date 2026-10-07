@@ -93,7 +93,7 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
 
 // ── Big Screen ─────────────────────────────────────────────────
 function BigScreenLeaderboard({
-  entries, clientName, eventName, editionLabel, editionId, flashMessage, role,
+  entries, clientName, eventName, editionLabel, editionId, flashMessage, role, orgId,
 }: {
   entries: LeaderboardEntry[]
   clientName: string
@@ -102,6 +102,7 @@ function BigScreenLeaderboard({
   editionId: string  // kept for ControlMenu
   flashMessage: string | null
   role: string
+  orgId?: string
 }) {
   return (
     <div className="bs-root">
@@ -169,7 +170,7 @@ function BigScreenLeaderboard({
       )}
 
       <div className="bs-topright">
-        <BrandLogos orgId={client?.organization_id} variant="inline" />
+        <BrandLogos orgId={orgId} variant="inline" />
         <ControlMenu editionId={editionId} currentView="bigscreen" role={role} />
       </div>
     </div>
@@ -300,6 +301,7 @@ export default function Leaderboard() {
         editionId={editionId!}
         flashMessage={flashMessage}
         role={currentRole}
+        orgId={client.organization_id}
       />
     )
   }
