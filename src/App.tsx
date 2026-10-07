@@ -17,6 +17,7 @@ import FeedbackPage from './pages/FeedbackPage'
 import QrScreen from './pages/QrScreen'
 import Hub from './pages/Hub'
 import './styles/global.css'
+import './styles/client-themes.css'
 
 export default function App() {
   const loadData = useStore(s => s.loadData)

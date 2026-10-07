@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
 import BrandLogos from '../components/BrandLogos'
+import { useClientTheme } from '../hooks/useClientTheme'
 import '../styles/hub.css'
 
 export default function Hub() {
@@ -18,6 +19,8 @@ export default function Hub() {
   const client = clients.find(c => c.id === event?.client_id)
 
   const [copied, setCopied] = useState(false)
+
+  useClientTheme(client?.id)
 
   if (!edition || !event || !client) {
     return <div className="hub-root"><p style={{ color: '#fff' }}>Edition not found.</p></div>

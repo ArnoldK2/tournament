@@ -6,6 +6,7 @@ import { computeLeaderboard } from '../store/scoring'
 import type { LeaderboardEntry } from '../types'
 import ControlMenu from '../components/ControlMenu'
 import BrandLogos from '../components/BrandLogos'
+import { useClientTheme } from '../hooks/useClientTheme'
 import '../styles/announcement.css'
 
 function ordinal(n: number) {
@@ -145,6 +146,8 @@ export default function Announcement() {
   const event = events.find(e => e.id === edition?.event_id)
   const client = clients.find(c => c.id === event?.client_id)
   const teams = useMemo(() => allTeams.filter(t => t.event_id === event?.id), [allTeams, event])
+
+  useClientTheme(client?.id)
   const games = useMemo(
     () => allGames.filter(g => g.edition_id === editionId).sort((a, b) => a.order - b.order),
     [allGames, editionId]

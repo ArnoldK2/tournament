@@ -8,6 +8,7 @@ import { computeLeaderboard } from '../store/scoring'
 import { exportEventData } from '../lib/exportEvent'
 import ControlMenu from '../components/ControlMenu'
 import BrandLogos from '../components/BrandLogos'
+import { useClientTheme } from '../hooks/useClientTheme'
 import '../styles/leaderboard.css'
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -212,6 +213,8 @@ export default function Leaderboard() {
     () => allGames.filter(g => g.edition_id === editionId).sort((a, b) => a.order - b.order),
     [allGames, editionId]
   )
+
+  useClientTheme(client?.id)
 
   const [flashMessage, setFlashMessage] = useState<string | null>(null)
   const prevRef = useRef<Map<string, number>>(new Map())

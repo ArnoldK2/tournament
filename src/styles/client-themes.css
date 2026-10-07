@@ -1,0 +1,527 @@
+/* ═══════════════════════════════════════════════════════════
+   Per-client theme overrides
+   Applied via data-theme attribute on <html> element.
+   Default (dark) styles remain unchanged.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────
+   WAGA Olympics theme  (client 5c403fae-…)
+   Cream #f5f0e8 · Red #c0392b · Near-black #1a1a1a · Bebas Neue
+   ──────────────────────────────────────────────────────────── */
+
+/* ── Register / Feedback (audience.css) ─────────────────── */
+
+[data-theme="waga"] .aud-root {
+  background: #f5f0e8;
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .aud-client {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .aud-title {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+[data-theme="waga"] .aud-subtitle {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="waga"] .aud-desc {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .aud-label {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="waga"] .aud-input,
+[data-theme="waga"] .aud-textarea {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.04);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .aud-input::placeholder,
+[data-theme="waga"] .aud-textarea::placeholder {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="waga"] .aud-input:focus,
+[data-theme="waga"] .aud-textarea:focus {
+  border-color: rgba(192, 57, 43, 0.5);
+}
+
+[data-theme="waga"] .aud-house-btn {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="waga"] .aud-house-btn.active {
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .aud-year-sep {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="waga"] .aud-role-btn {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="waga"] .aud-role-btn.active {
+  background: rgba(192, 57, 43, 0.12);
+  border-color: rgba(192, 57, 43, 0.4);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .aud-submit {
+  background: #c0392b;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.06em;
+  font-size: 1.1rem;
+}
+
+[data-theme="waga"] .aud-submit:hover:not(:disabled) {
+  background: #a93226;
+}
+
+[data-theme="waga"] .aud-empty,
+[data-theme="waga"] .aud-done-sub,
+[data-theme="waga"] .aud-success-sub {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="waga"] .aud-share-box {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="waga"] .aud-share-label {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="waga"] .aud-share-hint {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .aud-share-url {
+  color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="waga"] .aud-share-btn {
+  border-color: rgba(192, 57, 43, 0.35);
+  background: rgba(192, 57, 43, 0.08);
+  color: #c0392b;
+}
+
+[data-theme="waga"] .aud-share-btn:hover {
+  background: rgba(192, 57, 43, 0.18);
+  color: #a93226;
+}
+
+/* ── Hub (hub.css) ────────────────────────────────────────── */
+
+[data-theme="waga"] .hub-root {
+  background: #f5f0e8;
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .hub-client {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="waga"] .hub-event {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+[data-theme="waga"] .hub-edition {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .hub-action {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .hub-action:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="waga"] .hub-action:first-child {
+  background: rgba(192, 57, 43, 0.08);
+  border-color: rgba(192, 57, 43, 0.3);
+}
+
+[data-theme="waga"] .hub-action:first-child:hover {
+  background: rgba(192, 57, 43, 0.15);
+  border-color: rgba(192, 57, 43, 0.5);
+}
+
+[data-theme="waga"] .hub-action-sub {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="waga"] .hub-action-arrow {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+/* ── Leaderboard – mobile view (leaderboard.css) ─────────── */
+
+[data-theme="waga"] .lb-root {
+  background: #f5f0e8;
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .lb-title {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.04em;
+  background: none;
+  -webkit-text-fill-color: #1a1a1a;
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .lb-client {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .lb-subtitle {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .lb-row {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="waga"] .lb-row:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="waga"] .lb-row.rank-1 {
+  background: rgba(192, 57, 43, 0.06);
+  border-color: rgba(192, 57, 43, 0.2);
+}
+
+[data-theme="waga"] .lb-row.rank-2 {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="waga"] .lb-row.rank-3 {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="waga"] .rank-number {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .score {
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .lb-expand-chevron {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="waga"] .lb-breakdown-wrap.open .lb-breakdown {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="waga"] .lb-breakdown-name {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="waga"] .lb-breakdown-rank {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="waga"] .lb-breakdown-score {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="waga"] .lb-breakdown-empty {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="waga"] .lb-back {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="waga"] .lb-back:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .lb-empty {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="waga"] .update-flash {
+  background: rgba(192, 57, 43, 0.1);
+  border-color: rgba(192, 57, 43, 0.4);
+  color: #c0392b;
+}
+
+[data-theme="waga"] .lb-menu-btn {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="waga"] .lb-menu-btn:hover,
+[data-theme="waga"] .lb-menu-btn.active {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .lb-menu-dropdown {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="waga"] .lb-menu-item {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="waga"] .lb-menu-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .lb-menu-divider {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+/* ── Big screen (bs-root) ─────────────────────────────────── */
+
+[data-theme="waga"] .bs-root {
+  background: #f5f0e8;
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .bs-blob-1,
+[data-theme="waga"] .bs-blob-2,
+[data-theme="waga"] .bs-blob-3 {
+  display: none;
+}
+
+[data-theme="waga"] .bs-client {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .bs-title {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.04em;
+  background: none;
+  -webkit-text-fill-color: #c0392b;
+  color: #c0392b;
+}
+
+[data-theme="waga"] .bs-edition {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="waga"] .bs-live {
+  color: #27624f;
+  background: rgba(39, 98, 79, 0.1);
+  border-color: rgba(39, 98, 79, 0.3);
+}
+
+[data-theme="waga"] .bs-live-dot {
+  background: #27624f;
+  box-shadow: 0 0 6px #27624f;
+}
+
+[data-theme="waga"] .bs-podium-card {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="waga"] .bs-podium-card.rank-1 {
+  background: rgba(192, 57, 43, 0.07);
+  border-color: rgba(192, 57, 43, 0.25);
+}
+
+[data-theme="waga"] .bs-podium-card.rank-2 {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="waga"] .bs-podium-card.rank-3 {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="waga"] .bs-podium-name {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.03em;
+}
+
+[data-theme="waga"] .rank-number-big {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="waga"] .score-big {
+  background: none;
+  -webkit-text-fill-color: #1a1a1a;
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .bs-rest-row {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="waga"] .bs-rest-name {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.03em;
+}
+
+[data-theme="waga"] .bs-root .score {
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .bs-root .rank-number {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .bs-empty {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="waga"] .bs-qr-label {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* ── Progression (progression.css) ─────────────────────────── */
+
+[data-theme="waga"] .prog-root {
+  background: #f5f0e8;
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .prog-title {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.04em;
+  background: none;
+  -webkit-text-fill-color: #c0392b;
+  color: #c0392b;
+}
+
+[data-theme="waga"] .prog-subtitle {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="waga"] .prog-back {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="waga"] .prog-back:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .prog-btn {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="waga"] .prog-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .prog-btn-primary {
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+[data-theme="waga"] .prog-btn-primary:hover {
+  background: #a93226;
+  border-color: #a93226;
+}
+
+[data-theme="waga"] .prog-empty {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* ── Announcement (announcement.css) ─────────────────────── */
+
+[data-theme="waga"] .ann-root {
+  background: #f5f0e8;
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .ann-root::before {
+  display: none;
+}
+
+[data-theme="waga"] .ann-intro-bg {
+  opacity: 0.2;
+}
+
+[data-theme="waga"] .ann-intro-client {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="waga"] .ann-intro-event {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.05em;
+}
+
+[data-theme="waga"] .ann-intro-edition {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* ── ControlMenu shared (used across all public pages) ────── */
+
+[data-theme="waga"] .cm-btn {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="waga"] .cm-btn:hover,
+[data-theme="waga"] .cm-btn.active {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .cm-dropdown {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="waga"] .cm-item {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="waga"] .cm-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1a1a1a;
+}
+
+[data-theme="waga"] .cm-divider {
+  background: rgba(0, 0, 0, 0.07);
+}

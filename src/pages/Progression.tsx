@@ -5,6 +5,7 @@ import type { AppState } from '../store'
 import { computeLeaderboard } from '../store/scoring'
 import ControlMenu from '../components/ControlMenu'
 import BrandLogos from '../components/BrandLogos'
+import { useClientTheme } from '../hooks/useClientTheme'
 import '../styles/progression.css'
 
 interface Frame {
@@ -85,6 +86,8 @@ export default function Progression() {
   const event = store.events.find(e => e.id === edition?.event_id)
   const client = store.clients.find(c => c.id === event?.client_id)
 
+  const theme = useClientTheme(client?.id)
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [currentFrame, setCurrentFrame] = useState(-1)
@@ -103,6 +106,7 @@ export default function Progression() {
   const STEP_DURATION = 800
 
   const drawChart = useCallback((upTo: number) => {
+    const { gridLine, subText, faintText, bg } = theme
     const canvas = canvasRef.current
     const container = containerRef.current
     if (!canvas || !container || !frames.length) return
@@ -131,7 +135,7 @@ export default function Progression() {
     const y = (rank: number) => marginT + (rank - 1) * yStep
 
     // Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+    ctx.strokeStyle = gridLine
     ctx.lineWidth = 1
     for (let r = 1; r <= numTeams; r++) {
       ctx.beginPath()
@@ -141,7 +145,7 @@ export default function Progression() {
     }
 
     // Game labels (top) — first word only
-    ctx.fillStyle = 'rgba(255,255,255,0.5)'
+    ctx.fillStyle = subText
     ctx.font = '600 11px system-ui'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'bottom'
@@ -154,7 +158,7 @@ export default function Progression() {
     ctx.globalAlpha = 1
 
     // Rank labels (left axis)
-    ctx.fillStyle = 'rgba(255,255,255,0.25)'
+    ctx.fillStyle = faintText
     ctx.font = '700 12px system-ui'
     ctx.textAlign = 'right'
     ctx.textBaseline = 'middle'
@@ -198,7 +202,7 @@ export default function Progression() {
         ctx.beginPath()
         ctx.arc(x(gi), y(team.rank), DOT_R, 0, Math.PI * 2)
         ctx.fill()
-        ctx.fillStyle = '#0a0a14'
+        ctx.fillStyle = bg
         ctx.beginPath()
         ctx.arc(x(gi), y(team.rank), DOT_R * 0.45, 0, Math.PI * 2)
         ctx.fill()
@@ -232,7 +236,7 @@ export default function Progression() {
       }
       ctx.globalAlpha = 1
     }
-  }, [frames, numGames, numTeams, teamIds, teamColorMap])
+  }, [frames, numGames, numTeams, teamIds, teamColorMap, theme])
 
   useEffect(() => { drawChart(currentFrame) }, [currentFrame, drawChart])
 

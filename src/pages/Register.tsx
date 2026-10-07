@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useStore } from '../store'
 import { supabase } from '../lib/supabase'
 import BrandLogos from '../components/BrandLogos'
+import { useClientTheme } from '../hooks/useClientTheme'
 import '../styles/audience.css'
 
 export default function Register() {
@@ -19,6 +20,8 @@ export default function Register() {
   const event = events.find(e => e.id === edition?.event_id)
   const client = clients.find(c => c.id === event?.client_id)
   const teams = allTeams.filter(t => t.event_id === event?.id && !t.is_fun)
+
+  useClientTheme(client?.id)
 
   const [name, setName] = useState('')
   const [department, setDepartment] = useState('')
