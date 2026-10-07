@@ -233,13 +233,14 @@ export default function EditionWorkspace() {
   const [isFunGame, setIsFunGame] = useState(false)
   const [participantsPerTeam, setParticipantsPerTeam] = useState(1)
   const [attemptsPerParticipant, setAttemptsPerParticipant] = useState(1)
+  const [bonusPerFinisher, setBonusPerFinisher] = useState(0)
 
   if (!edition || !event || !client) { navigate(`/admin/${clientId}`); return null }
 
   function openAddGame() {
     setEditingGame(null); setGameName(''); setGameType('standard')
     setDirection('lower_is_better'); setGameScoringMode('dynamic'); setWeight(1); setGameStatus('pending')
-    setIsFunGame(false); setParticipantsPerTeam(1); setAttemptsPerParticipant(1)
+    setIsFunGame(false); setParticipantsPerTeam(1); setAttemptsPerParticipant(1); setBonusPerFinisher(0)
     setShowGameForm(true)
   }
 
@@ -250,6 +251,7 @@ export default function EditionWorkspace() {
     setIsFunGame(g.is_fun ?? false)
     setParticipantsPerTeam(g.participants_per_team ?? 1)
     setAttemptsPerParticipant(g.attempts_per_participant ?? 1)
+    setBonusPerFinisher(g.type === 'marathon' ? (g.participants_per_team ?? 0) : 0)
     setShowGameForm(true)
   }
 
@@ -262,6 +264,7 @@ export default function EditionWorkspace() {
       weight, status: gameStatus, is_fun: isFunGame,
       ...((gameType === 'participant_attempts') ? { participants_per_team: participantsPerTeam, attempts_per_participant: attemptsPerParticipant } : {}),
       ...((gameType === 'tally' || gameType === 'lives' || gameType === 'head_to_head') ? { participants_per_team: participantsPerTeam } : {}),
+      ...((gameType === 'marathon') ? { participants_per_team: bonusPerFinisher } : {}),
     }
     if (editingGame) updateGame(editingGame.id, base)
     else addGame({ ...base, order: games.length + 1 })
@@ -364,6 +367,7 @@ export default function EditionWorkspace() {
                     <span className="wsgr-type">
                       {GAME_TYPES.find(t => t.value === game.type)?.label}
                       {game.weight !== 1 && ` · ${game.weight}×`}
+                      {game.type === 'marathon' && (game.participants_per_team ?? 0) > 0 && ` · +${game.participants_per_team}pts/finisher`}
                     </span>
                   </div>
                 </div>
@@ -556,6 +560,20 @@ export default function EditionWorkspace() {
                   <input
                     type="number" min={1} value={participantsPerTeam}
                     onChange={e => setParticipantsPerTeam(Number(e.target.value))}
+                    className="modal-input" style={{ width: '6rem' }}
+                  />
+                </>
+              )}
+
+              {gameType === 'marathon' && (
+                <>
+                  <label className="modal-label">
+                    Bonus pts per finisher
+                    <span className="modal-label-hint"> (0 = disabled — added directly to team total)</span>
+                  </label>
+                  <input
+                    type="number" min={0} value={bonusPerFinisher}
+                    onChange={e => setBonusPerFinisher(Number(e.target.value))}
                     className="modal-input" style={{ width: '6rem' }}
                   />
                 </>

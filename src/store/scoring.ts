@@ -185,7 +185,18 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
       case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed); break
       case 'points':                gameMap = computePoints(game, teams, data.pointsResults, fixed); break
       case 'multi_participant':     gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed); break
-      case 'marathon':              gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed); break
+      case 'marathon': {
+        gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed)
+        const bonus = game.participants_per_team ?? 0
+        if (bonus > 0) {
+          const counts = new Map<string, number>()
+          for (const r of data.participantResults.filter(r => r.game_id === game.id))
+            counts.set(r.team_id, (counts.get(r.team_id) ?? 0) + 1)
+          for (const [teamId, count] of counts)
+            gameMap.set(teamId, (gameMap.get(teamId) ?? 0) + count * bonus)
+        }
+        break
+      }
       case 'participant_attempts':  gameMap = computeParticipantAttempts(game, teams, data.participantAttemptResults, fixed); break
       case 'cumulative':            gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed); break
       case 'tally':                 gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed); break
