@@ -165,6 +165,7 @@ const GAME_TYPES: { value: GameType; label: string; desc: string }[] = [
   { value: 'standard',              label: 'Standard',           desc: 'One position per team' },
   { value: 'points',                label: 'Points / Counts',    desc: 'Enter points scored by each team' },
   { value: 'multi_participant',     label: 'Multi-Participant',  desc: 'Individual athletes per team' },
+  { value: 'marathon',              label: 'Marathon',           desc: 'Finish-line tape — tap team buttons as runners cross' },
   { value: 'participant_attempts',  label: 'Attempt Tracker',    desc: 'Track hits/misses per participant' },
   { value: 'cumulative',            label: 'Cumulative Rounds',  desc: 'Scores add up across rounds' },
   { value: 'match_play',            label: 'Match Play',         desc: 'Teams paired in matches, points for win/loss' },
@@ -267,8 +268,8 @@ export default function EditionWorkspace() {
     setShowGameForm(false)
   }
 
-  const needsDirection = ['standard', 'multi_participant', 'cumulative', 'points', 'tally'].includes(gameType)
-  const needsScoringMode = ['standard', 'points', 'multi_participant', 'participant_attempts', 'cumulative', 'tally', 'lives', 'head_to_head'].includes(gameType)
+  const needsDirection = ['standard', 'multi_participant', 'marathon', 'cumulative', 'points', 'tally'].includes(gameType)
+  const needsScoringMode = ['standard', 'points', 'multi_participant', 'marathon', 'participant_attempts', 'cumulative', 'tally', 'lives', 'head_to_head'].includes(gameType)
   return (
     <div className="admin-root">
       <AdminHeader
@@ -607,7 +608,7 @@ export default function EditionWorkspace() {
 
               <label className="modal-label">Weight <span className="modal-label-hint">multiplier</span></label>
               <div className="weight-row">
-                {[0.5, 1, 1.5, 2, 3].map(w => (
+                {[0.5, 1, 1.5, 2, 3, 5].map(w => (
                   <button key={w} className={`weight-btn ${weight === w ? 'selected' : ''}`} onClick={() => setWeight(w)}>{w}×</button>
                 ))}
               </div>

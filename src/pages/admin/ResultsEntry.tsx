@@ -473,6 +473,7 @@ export default function ResultsEntry({ game, eventId }: Props) {
     )
   }
 
+  if (game.type === 'marathon') return <MarathonEntry game={game} teams={teams} />
   if (game.type === 'match_play') return <MatchPlayEntry game={game} teams={teams} />
   if (game.type === 'completion') return <CompletionEntry game={game} teams={teams} />
   if (game.type === 'tally') return <TallyEntry game={game} teams={teams} />
@@ -1148,6 +1149,122 @@ function HeadToHeadEntry({ game, teams }: { game: Game; teams: Team[] }) {
 
       <AnimatePresence>
         {showPin && <PinConfirmModal onConfirm={handleFinish} onCancel={() => setShowPin(false)} />}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ── Marathon Entry ────────────────────────────────────────────
+function MarathonEntry({ game, teams }: { game: Game; teams: Team[] }) {
+  const participantResults = useStore(s => s.participantResults)
+  const saveParticipantResults = useStore(s => s.saveParticipantResults)
+  const updateGame = useStore(s => s.updateGame)
+  const logAudit = useStore(s => s.logAudit)
+
+  const [finishOrder, setFinishOrder] = useState<string[]>(() => {
+    const existing = participantResults
+      .filter(r => r.game_id === game.id)
+      .sort((a, b) => a.position - b.position)
+    return existing.map(r => r.team_id)
+  })
+
+  const [showPin, setShowPin] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const tapeRef = useRef<HTMLDivElement>(null)
+
+  const countMap = finishOrder.reduce<Record<string, number>>((acc, id) => {
+    acc[id] = (acc[id] ?? 0) + 1
+    return acc
+  }, {})
+
+  function tapTeam(teamId: string) {
+    setFinishOrder(prev => {
+      const next = [...prev, teamId]
+      setTimeout(() => { tapeRef.current?.scrollTo({ top: tapeRef.current.scrollHeight, behavior: 'smooth' }) }, 30)
+      return next
+    })
+  }
+
+  function undo() { setFinishOrder(prev => prev.slice(0, -1)) }
+
+  async function handleConfirm() {
+    setShowPin(false)
+    const results = finishOrder.map((teamId, i) => ({
+      team_id: teamId, participant_name: '', position: i + 1,
+    }))
+    await saveParticipantResults(game.id, results)
+    await updateGame(game.id, { status: 'completed' })
+    await logAudit('save_results', game.id, game.name, {
+      type: 'marathon',
+      participant_count: results.length,
+      entries: results.map(r => ({
+        position: r.position,
+        team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id,
+      })),
+    })
+    setSaved(true)
+  }
+
+  const isComplete = game.status === 'completed'
+
+  return (
+    <div className="results-entry marathon-entry">
+      <p className="re-hint">Tap a team each time one of their runners crosses the finish line</p>
+
+      <div className="marathon-tape" ref={tapeRef}>
+        {finishOrder.length === 0
+          ? <p className="marathon-tape-empty">No finishers recorded yet</p>
+          : finishOrder.map((teamId, i) => {
+              const team = teams.find(t => t.id === teamId)
+              return (
+                <div key={i} className="marathon-tape-row">
+                  <span className="marathon-pos">#{i + 1}</span>
+                  <span className="marathon-dot" style={{ background: team?.color }} />
+                  <span className="marathon-team-name">{team?.name}</span>
+                </div>
+              )
+            })
+        }
+      </div>
+
+      {!isComplete && finishOrder.length > 0 && (
+        <button className="marathon-undo" onClick={undo}>↺ Undo last</button>
+      )}
+
+      {!isComplete && (
+        <div className="marathon-buttons">
+          {teams.map(team => (
+            <button
+              key={team.id}
+              className="marathon-team-btn"
+              style={{ '--tc': team.color } as React.CSSProperties}
+              onClick={() => tapTeam(team.id)}
+            >
+              <span className="marathon-btn-dot" />
+              <span className="marathon-btn-name">{team.name}</span>
+              {countMap[team.id] ? <span className="marathon-btn-count">{countMap[team.id]}</span> : null}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="marathon-summary">
+        {teams.map(team => (
+          <span key={team.id} className="marathon-summary-chip" style={{ '--tc': team.color } as React.CSSProperties}>
+            <span className="marathon-summary-dot" />
+            {team.name}: <strong>{countMap[team.id] ?? 0}</strong>
+          </span>
+        ))}
+      </div>
+
+      {!isComplete && finishOrder.length > 0 && (
+        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => setShowPin(true)}>
+          {saved ? '✓ Saved' : 'Finish Marathon'}
+        </button>
+      )}
+
+      <AnimatePresence>
+        {showPin && <PinConfirmModal onConfirm={handleConfirm} onCancel={() => setShowPin(false)} />}
       </AnimatePresence>
     </div>
   )

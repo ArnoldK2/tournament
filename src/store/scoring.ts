@@ -53,11 +53,15 @@ function computePoints(game: Game, teams: Team[], results: PointsResult[], fixed
 function computeMultiParticipant(game: Game, teams: Team[], results: ParticipantResult[], fixed: boolean): Map<string, number> {
   const out = new Map<string, number>()
   const gameResults = results.filter(r => r.game_id === game.id)
+  const N = gameResults.length
   const teamTotals = new Map<string, number>()
-  for (const r of gameResults) teamTotals.set(r.team_id, (teamTotals.get(r.team_id) ?? 0) + r.position)
-  const sorted = [...teamTotals.entries()].sort((a, b) =>
-    game.scoring_direction === 'lower_is_better' ? a[1] - b[1] : b[1] - a[1]
-  )
+  for (const r of gameResults) {
+    // lower_is_better (marathon): invert so position 1 contributes most points
+    // higher_is_better (musical chairs): raw position already rewards later survivors
+    const contribution = game.scoring_direction === 'lower_is_better' ? N - r.position + 1 : r.position
+    teamTotals.set(r.team_id, (teamTotals.get(r.team_id) ?? 0) + contribution)
+  }
+  const sorted = [...teamTotals.entries()].sort((a, b) => b[1] - a[1])
   const n = teams.length
   let rank = 1
   for (let i = 0; i < sorted.length; i++) {
@@ -181,6 +185,7 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
       case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed); break
       case 'points':                gameMap = computePoints(game, teams, data.pointsResults, fixed); break
       case 'multi_participant':     gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed); break
+      case 'marathon':              gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed); break
       case 'participant_attempts':  gameMap = computeParticipantAttempts(game, teams, data.participantAttemptResults, fixed); break
       case 'cumulative':            gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed); break
       case 'tally':                 gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed); break

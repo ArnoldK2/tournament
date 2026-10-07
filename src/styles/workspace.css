@@ -1513,3 +1513,130 @@
   border-color: rgba(251, 191, 36, 0.4);
   color: #fbbf24;
 }
+
+/* ── Marathon Entry ──────────────────────────────────────── */
+.marathon-entry { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.marathon-tape {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+.marathon-tape-empty {
+  text-align: center;
+  color: var(--admin-sub);
+  font-size: 0.82rem;
+  padding: 1.5rem;
+  margin: 0;
+}
+.marathon-tape-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.marathon-tape-row:last-child { border-bottom: none; }
+.marathon-pos {
+  width: 2.2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--admin-sub);
+  text-align: right;
+  flex-shrink: 0;
+}
+.marathon-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.marathon-team-name { font-size: 0.88rem; font-weight: 600; }
+
+.marathon-undo {
+  align-self: flex-end;
+  background: none;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-sub);
+  border-radius: 8px;
+  padding: 0.3rem 0.75rem;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.marathon-undo:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+
+.marathon-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.marathon-team-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  border: 2px solid color-mix(in srgb, var(--tc) 40%, transparent);
+  background: color-mix(in srgb, var(--tc) 12%, transparent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+  flex: 1;
+  min-width: 120px;
+  justify-content: center;
+}
+.marathon-team-btn:hover {
+  background: color-mix(in srgb, var(--tc) 25%, transparent);
+  border-color: color-mix(in srgb, var(--tc) 70%, transparent);
+  transform: scale(1.03);
+}
+.marathon-team-btn:active { transform: scale(0.97); }
+.marathon-btn-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--tc);
+  flex-shrink: 0;
+}
+.marathon-btn-name { flex: 1; text-align: center; }
+.marathon-btn-count {
+  background: var(--tc);
+  color: #000;
+  border-radius: 99px;
+  padding: 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  min-width: 1.4rem;
+  text-align: center;
+}
+
+.marathon-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-top: 0.25rem;
+}
+.marathon-summary-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 99px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--admin-sub);
+}
+.marathon-summary-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--tc);
+  flex-shrink: 0;
+}
+.marathon-summary-chip strong { color: #fff; }

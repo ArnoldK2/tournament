@@ -11,6 +11,7 @@ const GAME_TYPES: { value: GameType; label: string; desc: string }[] = [
   { value: 'standard',            label: 'Standard',            desc: 'One position per team (1st, 2nd, 3rd…)' },
   { value: 'points',              label: 'Points',              desc: 'Enter raw scores — system ranks automatically' },
   { value: 'multi_participant',   label: 'Multi-Participant',   desc: 'Individual athletes within each team' },
+  { value: 'marathon',            label: 'Marathon',            desc: 'Finish-line tape — tap team buttons as runners cross' },
   { value: 'cumulative',          label: 'Cumulative Rounds',   desc: 'Same game played multiple times — scores add up' },
   { value: 'bracket_single',      label: 'Single Elimination',  desc: 'Lose once and you\'re out' },
   { value: 'bracket_double',      label: 'Double Elimination',  desc: 'Two losses to be eliminated' },
@@ -80,7 +81,7 @@ export default function AdminGames() {
     setShowForm(false)
   }
 
-  const needsDirection = ['standard', 'multi_participant', 'cumulative'].includes(gameType)
+  const needsDirection = ['standard', 'multi_participant', 'marathon', 'cumulative'].includes(gameType)
 
   return (
     <AdminShell title="Games" clientId={clientId!} onBack={() => navigate(`/admin/${clientId}`)}>
@@ -184,7 +185,7 @@ export default function AdminGames() {
 
               <label className="modal-label">Score Weight <span className="modal-label-hint">(multiplier, default 1×)</span></label>
               <div className="weight-row">
-                {[0.5, 1, 1.5, 2, 3].map(w => (
+                {[0.5, 1, 1.5, 2, 3, 5].map(w => (
                   <button key={w} className={`weight-btn ${weight === w ? 'selected' : ''}`} onClick={() => setWeight(w)}>
                     {w}×
                   </button>
