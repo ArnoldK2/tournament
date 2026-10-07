@@ -178,7 +178,7 @@
 /* ── Leaderboard – mobile view (leaderboard.css) ─────────── */
 
 [data-theme="waga"] .lb-root {
-  background: linear-gradient(180deg, rgba(180, 35, 26, 0.13) 0%, #f5f0e8 40%);
+  background: #f5f0e8;
   color: #1a1a1a;
 }
 
@@ -310,7 +310,7 @@
 /* ── Big screen (bs-root) ─────────────────────────────────── */
 
 [data-theme="waga"] .bs-root {
-  background: linear-gradient(180deg, rgba(180, 35, 26, 0.16) 0%, #f5f0e8 35%);
+  background: #f5f0e8;
   color: #1a1a1a;
 }
 
@@ -467,7 +467,7 @@
 /* ── Announcement (announcement.css) ─────────────────────── */
 
 [data-theme="waga"] .ann-root {
-  background: linear-gradient(180deg, rgba(180, 35, 26, 0.14) 0%, #f5f0e8 45%);
+  background: #f5f0e8;
   color: #1a1a1a;
 }
 
@@ -476,7 +476,7 @@
 }
 
 [data-theme="waga"] .ann-winner-root {
-  background: linear-gradient(180deg, rgba(180, 35, 26, 0.14) 0%, #f5f0e8 45%);
+  background: #f5f0e8;
 }
 
 [data-theme="waga"] .ann-intro-bg {
