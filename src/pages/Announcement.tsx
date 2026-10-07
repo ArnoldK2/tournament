@@ -119,7 +119,7 @@ function RevealCard({ entry }: { entry: LeaderboardEntry }) {
     >
       <h2 className="ann-reveal-name" style={{ color: entry.team_color }}>{entry.team_name}</h2>
       <span className="ann-reveal-meta">
-        {ordinal(entry.rank).toUpperCase()} PLACE &nbsp;Â·&nbsp; {entry.total_score} pts
+        {ordinal(entry.rank).toUpperCase()} PLACE &nbsp;·&nbsp; {entry.total_score} pts
       </span>
     </motion.div>
   )
@@ -241,7 +241,7 @@ export default function Announcement() {
             animate={{ opacity: [0.3, 0.9, 0.3] }}
             transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
           >
-            â–¼ &nbsp; tap anywhere to begin &nbsp; â–¼
+            ▼ &nbsp; tap anywhere to begin &nbsp; ▼
           </motion.p>
         </motion.div>
       </div>
@@ -270,7 +270,7 @@ export default function Announcement() {
             animate={{ y: [0, -14, 0], rotate: [-5, 5, -5] }}
             transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            ðŸ†
+            🏆
           </motion.div>
 
           <motion.p
