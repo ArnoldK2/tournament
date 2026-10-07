@@ -181,7 +181,7 @@ export default function Register() {
           {submitting ? 'Registering...' : 'Register →'}
         </button>
 
-        <BrandLogos variant="footer" />
+        <BrandLogos orgId={client.organization_id} variant="footer" />
       </motion.form>
     </div>
   )

@@ -97,7 +97,7 @@ export default function Hub() {
           ))}
         </div>
 
-        <BrandLogos variant="footer" />
+        <BrandLogos orgId={client?.organization_id} variant="footer" />
       </motion.div>
     </div>
   )

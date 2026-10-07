@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+﻿import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useStore } from '../store'
@@ -118,7 +118,7 @@ function RevealCard({ entry }: { entry: LeaderboardEntry }) {
     >
       <h2 className="ann-reveal-name" style={{ color: entry.team_color }}>{entry.team_name}</h2>
       <span className="ann-reveal-meta">
-        {ordinal(entry.rank).toUpperCase()} PLACE &nbsp;·&nbsp; {entry.total_score} pts
+        {ordinal(entry.rank).toUpperCase()} PLACE &nbsp;Â·&nbsp; {entry.total_score} pts
       </span>
     </motion.div>
   )
@@ -190,7 +190,7 @@ export default function Announcement() {
       const next = step + 1
       setStep(next)
 
-      // after revealing 2nd place, unlock and wait — the NEXT click triggers champion
+      // after revealing 2nd place, unlock and wait â€” the NEXT click triggers champion
       const delay = 700
       setTimeout(() => { setLocked(false) }, delay)
     }
@@ -215,12 +215,12 @@ export default function Announcement() {
     )
   }
 
-  // ── INTRO ─────────────────────────────────────────────────────
+  // â”€â”€ INTRO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (phase === 'intro') {
     return (
       <div className="ann-root ann-center" onClick={advance}>
         <ControlMenu editionId={editionId!} currentView="announcement" role={currentRole} />
-        <BrandLogos variant="corner" />
+        <BrandLogos orgId={client?.organization_id} variant="corner" />
         <div className="ann-intro-bg" />
         <motion.div
           className="ann-intro-content"
@@ -238,20 +238,20 @@ export default function Announcement() {
             animate={{ opacity: [0.3, 0.9, 0.3] }}
             transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
           >
-            ▼ &nbsp; tap anywhere to begin &nbsp; ▼
+            â–¼ &nbsp; tap anywhere to begin &nbsp; â–¼
           </motion.p>
         </motion.div>
       </div>
     )
   }
 
-  // ── WINNER / CHAMPION ─────────────────────────────────────────
+  // â”€â”€ WINNER / CHAMPION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (phase === 'winner') {
     const winner = revealOrder[total - 1]
     return (
       <div className="ann-root ann-center ann-winner-root" onClick={() => navigate(-1)}>
         <ControlMenu editionId={editionId!} currentView="announcement" role={currentRole} />
-        <BrandLogos variant="corner" />
+        <BrandLogos orgId={client?.organization_id} variant="corner" />
         <Confetti />
         <Fireworks />
         <div className="ann-winner-glow" style={{ '--wc': winner.team_color } as React.CSSProperties} />
@@ -267,7 +267,7 @@ export default function Announcement() {
             animate={{ y: [0, -14, 0], rotate: [-5, 5, -5] }}
             transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            🏆
+            ðŸ†
           </motion.div>
 
           <motion.p
@@ -303,11 +303,11 @@ export default function Announcement() {
     )
   }
 
-  // ── REVEAL SCREEN ─────────────────────────────────────────────
+  // â”€â”€ REVEAL SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <div className="ann-root ann-center" onClick={advance}>
       <ControlMenu editionId={editionId!} currentView="announcement" role={currentRole} />
-      <BrandLogos variant="corner" />
+      <BrandLogos orgId={client?.organization_id} variant="corner" />
       {flash && <div className="ann-flash" key={step} />}
 
       <motion.div

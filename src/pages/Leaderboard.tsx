@@ -168,7 +168,7 @@ function BigScreenLeaderboard({
       )}
 
       <div className="bs-topright">
-        <BrandLogos variant="inline" />
+        <BrandLogos orgId={client?.organization_id} variant="inline" />
         <ControlMenu editionId={editionId} currentView="bigscreen" role={role} />
       </div>
     </div>
@@ -364,7 +364,7 @@ export default function Leaderboard() {
         )}
       </div>
 
-      <BrandLogos variant="footer" />
+      <BrandLogos orgId={client?.organization_id} variant="footer" />
     </div>
   )
 }

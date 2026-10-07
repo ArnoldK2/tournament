@@ -83,6 +83,7 @@ export default function Progression() {
 
   const edition = store.editions.find(e => e.id === editionId)
   const event = store.events.find(e => e.id === edition?.event_id)
+  const client = store.clients.find(c => c.id === event?.client_id)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -317,7 +318,7 @@ export default function Progression() {
         <button className="prog-btn" onClick={() => { stopPlay(); stepForward() }}>⏭ Step</button>
       </div>
 
-      <BrandLogos variant="corner" />
+      <BrandLogos orgId={client?.organization_id} variant="corner" />
     </div>
   )
 }
