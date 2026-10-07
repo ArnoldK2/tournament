@@ -6,9 +6,17 @@ import AdminHeader from '../../components/AdminHeader'
 import '../../styles/admin.css'
 
 const PRESET_COLORS = [
+  // Brights
   '#f97316','#06b6d4','#a855f7','#22c55e',
   '#ef4444','#eab308','#3b82f6','#ec4899',
   '#14b8a6','#f59e0b','#8b5cf6','#10b981',
+  // Extended
+  '#40e0d0', // turquoise
+  '#e8b84b', // mustard yellow
+  '#800000', // maroon
+  '#f5f0e8', // beige
+  '#ffffff', // white
+  '#1a1a1a', // black
 ]
 
 export default function AdminTeams() {
