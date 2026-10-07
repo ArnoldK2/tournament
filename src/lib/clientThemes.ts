@@ -29,7 +29,7 @@ const WAGA_THEME: ClientTheme = {
   subText: 'rgba(0,0,0,0.5)',
   faintText: 'rgba(0,0,0,0.25)',
   gridLine: 'rgba(0,0,0,0.08)',
-  accent: '#c0392b',
+  accent: '#B4231A',
   fontUrl: 'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap',
 }
 
