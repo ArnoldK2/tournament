@@ -150,14 +150,14 @@ export default function Register() {
           required
         />
 
-        <label className="aud-label">Department *</label>
+        {/* <label className="aud-label">Department *</label>
         <input
           className="aud-input"
           value={department}
           onChange={e => setDepartment(e.target.value)}
           placeholder="e.g. Finance, Engineering"
           required
-        />
+        /> */}
 
         <label className="aud-label">Team *</label>
         <div className="aud-houses">
@@ -179,7 +179,7 @@ export default function Register() {
         <button
           type="submit"
           className="aud-submit"
-          disabled={!name.trim() || !department.trim() || !teamName.trim() || submitting}
+          disabled={!name.trim() || !teamName.trim() || submitting}
         >
           {submitting ? 'Registering...' : 'Register →'}
         </button>
