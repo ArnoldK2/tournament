@@ -24,7 +24,7 @@ export default function Register() {
   useClientTheme(client?.id)
 
   const [name, setName] = useState('')
-  const [department, setDepartment] = useState('')
+  // const [department, setDepartment] = useState('')
   const [teamName, setTeamName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -69,7 +69,7 @@ export default function Register() {
     const { error: err } = await supabase.from('audience_registrations').insert({
       edition_id: editionId,
       name: name.trim(),
-      department: department.trim(),
+      department: '',
       team_name: teamName.trim(),
       source,
     })
