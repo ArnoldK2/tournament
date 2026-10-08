@@ -221,6 +221,7 @@ export default function EditionWorkspace() {
   const [editingGame, setEditingGame] = useState<Game | null>(null)
   const [showClearModal, setShowClearModal] = useState(false)
   const [clearConfirm, setClearConfirm] = useState('')
+  const [showEditionSettings, setShowEditionSettings] = useState(false)
   const [clearing, setClearing] = useState(false)
 
   // Game form state
@@ -293,6 +294,9 @@ export default function EditionWorkspace() {
               ⚠
             </button>
           )}
+          <button className="icon-btn" onClick={() => setShowEditionSettings(true)} title="Edition settings">
+            ⚙
+          </button>
           <button className="ew-leaderboard-btn" onClick={() => navigate(`/leaderboard/${editionId}`)}>
             <span>Leaderboard</span> ↗
           </button>
@@ -453,6 +457,35 @@ export default function EditionWorkspace() {
       </div>
 
       {/* Game form bottom sheet */}
+
+      {/* ── Edition Settings Modal ── */}
+      <AnimatePresence>
+        {showEditionSettings && (
+          <motion.div
+            className="modal-backdrop"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowEditionSettings(false)}
+          >
+            <motion.div
+              className="admin-modal"
+              style={{ maxWidth: 400 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <h2 className="modal-title">Edition Settings</h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--admin-sub)', margin: 0 }}>
+                Scoring system and other edition-level options coming soon.
+              </p>
+              <div className="modal-actions">
+                <button className="modal-btn secondary" onClick={() => setShowEditionSettings(false)}>Close</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Clear Results Modal (super_admin only) ── */}
       <AnimatePresence>
