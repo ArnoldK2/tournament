@@ -1576,6 +1576,9 @@
   transition: all 0.15s;
 }
 .marathon-undo:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+.marathon-undo-row { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.marathon-undo-all { color: #f87171; border-color: rgba(248,113,113,0.3); }
+.marathon-undo-all:hover { color: #fff; background: rgba(248,113,113,0.15); border-color: #f87171; }
 
 .marathon-buttons {
   display: grid;

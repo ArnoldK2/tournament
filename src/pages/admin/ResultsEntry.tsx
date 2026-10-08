@@ -1177,6 +1177,7 @@ function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
   })
 
   const [showPin, setShowPin] = useState(false)
+  const [showUndoAllPin, setShowUndoAllPin] = useState(false)
   const [saved, setSaved] = useState(false)
   const tapeRef = useRef<HTMLDivElement>(null)
 
@@ -1194,6 +1195,7 @@ function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
   }
 
   function undo() { setTapOrder(prev => prev.slice(0, -1)) }
+  function undoAll() { setTapOrder([]); setShowUndoAllPin(false) }
 
   async function handleConfirm() {
     setShowPin(false)
@@ -1236,7 +1238,10 @@ function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
       </div>
 
       {!isComplete && tapOrder.length > 0 && (
-        <button className="marathon-undo" onClick={undo}>↺ Undo last</button>
+        <div className="marathon-undo-row">
+          <button className="marathon-undo" onClick={undo}>↺ Undo last</button>
+          <button className="marathon-undo marathon-undo-all" onClick={() => setShowUndoAllPin(true)}>✕ Undo all</button>
+        </div>
       )}
 
       {!isComplete && (
@@ -1273,6 +1278,7 @@ function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
 
       <AnimatePresence>
         {showPin && <PinConfirmModal onConfirm={handleConfirm} onCancel={() => setShowPin(false)} />}
+        {showUndoAllPin && <PinConfirmModal onConfirm={undoAll} onCancel={() => setShowUndoAllPin(false)} />}
       </AnimatePresence>
     </div>
   )
