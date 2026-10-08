@@ -1154,12 +1154,20 @@ function HeadToHeadEntry({ game, teams }: { game: Game; teams: Team[] }) {
   )
 }
 
-// ── Tape Entry (Marathon) ─────────────────────────────────────
+// ── Tape Entry (Marathon + elimination games) ─────────────────
 function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
   const participantResults = useStore(s => s.participantResults)
   const saveParticipantResults = useStore(s => s.saveParticipantResults)
   const updateGame = useStore(s => s.updateGame)
   const logAudit = useStore(s => s.logAudit)
+
+  const isElimination = game.scoring_direction === 'higher_is_better'
+  const hint = isElimination
+    ? 'Tap a team each time one of their participants gets eliminated'
+    : 'Tap a team each time one of their participants crosses the finish line'
+  const emptyLabel = isElimination ? 'No eliminations recorded yet' : 'No finishers recorded yet'
+  const saveLabel = isElimination ? 'Finish Game' : 'Finish'
+  const tapIcon = isElimination ? '💀' : '🏃'
 
   const [tapOrder, setTapOrder] = useState<string[]>(() => {
     const existing = participantResults
@@ -1209,16 +1217,16 @@ function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
 
   return (
     <div className="results-entry marathon-entry">
-      <p className="re-hint">Tap a team each time one of their participants crosses the finish line</p>
+      <p className="re-hint">{hint}</p>
 
       <div className="marathon-tape" ref={tapeRef}>
         {tapOrder.length === 0
-          ? <p className="marathon-tape-empty">No finishers recorded yet</p>
+          ? <p className="marathon-tape-empty">{emptyLabel}</p>
           : tapOrder.map((teamId, i) => {
               const team = teams.find(t => t.id === teamId)
               return (
                 <div key={i} className="marathon-tape-row">
-                  <span className="marathon-pos">🏃 #{i + 1}</span>
+                  <span className="marathon-pos">{tapIcon} #{i + 1}</span>
                   <span className="marathon-dot" style={{ background: team?.color }} />
                   <span className="marathon-team-name">{team?.name}</span>
                 </div>
@@ -1259,7 +1267,7 @@ function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
 
       {!isComplete && tapOrder.length > 0 && (
         <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => setShowPin(true)}>
-          {saved ? '✓ Saved' : 'Finish Marathon'}
+          {saved ? '✓ Saved' : saveLabel}
         </button>
       )}
 
