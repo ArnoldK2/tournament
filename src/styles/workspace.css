@@ -1521,28 +1521,35 @@
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--admin-border);
   border-radius: 10px;
-  max-height: 260px;
-  overflow-y: auto;
-  padding: 0.5rem 0;
+  overflow-x: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-height: 60px;
+  align-content: flex-start;
 }
 .marathon-tape-empty {
   text-align: center;
   color: var(--admin-sub);
   font-size: 0.82rem;
-  padding: 1.5rem;
+  padding: 0.5rem 1rem;
   margin: 0;
+  width: 100%;
 }
 .marathon-tape-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.35rem 0.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 100px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
 }
-.marathon-tape-row:last-child { border-bottom: none; }
 .marathon-pos {
-  width: 2.2rem;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--admin-sub);
   text-align: right;
