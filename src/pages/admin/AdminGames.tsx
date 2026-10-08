@@ -11,7 +11,7 @@ const GAME_TYPES: { value: GameType; label: string; desc: string }[] = [
   { value: 'standard',            label: 'Standard',            desc: 'One position per team (1st, 2nd, 3rd…)' },
   { value: 'points',              label: 'Points',              desc: 'Enter raw scores — system ranks automatically' },
   { value: 'multi_participant',   label: 'Multi-Participant',   desc: 'Individual athletes within each team' },
-  { value: 'tape',                label: 'Tape',                desc: 'Finish-line tape — tap team buttons as runners cross' },
+  { value: 'tape',                label: 'Tape',                desc: 'Finish-line tape — tap team buttons as participants cross' },
   { value: 'cumulative',          label: 'Cumulative Rounds',   desc: 'Same game played multiple times — scores add up' },
   { value: 'bracket_single',      label: 'Single Elimination',  desc: 'Lose once and you\'re out' },
   { value: 'bracket_double',      label: 'Double Elimination',  desc: 'Two losses to be eliminated' },

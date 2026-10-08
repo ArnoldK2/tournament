@@ -1209,7 +1209,7 @@ function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
 
   return (
     <div className="results-entry marathon-entry">
-      <p className="re-hint">Tap a team each time one of their runners crosses the finish line</p>
+      <p className="re-hint">Tap a team each time one of their participants crosses the finish line</p>
 
       <div className="marathon-tape" ref={tapeRef}>
         {tapOrder.length === 0

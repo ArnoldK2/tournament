@@ -165,7 +165,7 @@ const GAME_TYPES: { value: GameType; label: string; desc: string }[] = [
   { value: 'standard',              label: 'Standard',           desc: 'One position per team' },
   { value: 'points',                label: 'Points / Counts',    desc: 'Enter points scored by each team' },
   { value: 'multi_participant',     label: 'Multi-Participant',  desc: 'Individual athletes per team' },
-  { value: 'tape',                  label: 'Tape',               desc: 'Finish-line tape — tap team buttons as runners cross' },
+  { value: 'tape',                  label: 'Tape',               desc: 'Finish-line tape — tap team buttons as participants cross' },
   { value: 'participant_attempts',  label: 'Attempt Tracker',    desc: 'Track hits/misses per participant' },
   { value: 'cumulative',            label: 'Cumulative Rounds',  desc: 'Scores add up across rounds' },
   { value: 'match_play',            label: 'Match Play',         desc: 'Teams paired in matches, points for win/loss' },
