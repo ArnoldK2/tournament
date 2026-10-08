@@ -1571,8 +1571,8 @@
 .marathon-undo:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
 
 .marathon-buttons {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
 }
 .marathon-team-btn {
