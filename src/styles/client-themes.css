@@ -59,7 +59,8 @@
 }
 
 [data-theme="waga"] .aud-house-btn.active {
-  color: #fff;
+  color: #1a1a1a;
+  font-weight: 800;
 }
 
 [data-theme="waga"] .aud-year-sep {

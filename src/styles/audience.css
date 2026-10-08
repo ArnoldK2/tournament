@@ -105,10 +105,11 @@
 }
 
 .aud-house-btn.active {
-  background: var(--hc, #6366f1);
-  border-color: var(--hc, #6366f1);
+  background: color-mix(in srgb, var(--hc, #6366f1) 22%, transparent);
+  border: 2px solid var(--hc, #6366f1);
   color: #fff;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--hc, #6366f1) 50%, transparent);
+  font-weight: 800;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--hc, #6366f1) 45%, transparent);
 }
 
 /* Year range */
