@@ -185,7 +185,7 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
       case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed); break
       case 'points':                gameMap = computePoints(game, teams, data.pointsResults, fixed); break
       case 'multi_participant':     gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed); break
-      case 'marathon': {
+      case 'tape': {
         gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed)
         const bonus = game.participants_per_team ?? 0
         if (bonus > 0) {

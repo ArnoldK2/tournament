@@ -165,7 +165,7 @@ const GAME_TYPES: { value: GameType; label: string; desc: string }[] = [
   { value: 'standard',              label: 'Standard',           desc: 'One position per team' },
   { value: 'points',                label: 'Points / Counts',    desc: 'Enter points scored by each team' },
   { value: 'multi_participant',     label: 'Multi-Participant',  desc: 'Individual athletes per team' },
-  { value: 'marathon',              label: 'Marathon',           desc: 'Finish-line tape — tap team buttons as runners cross' },
+  { value: 'tape',                  label: 'Tape',               desc: 'Finish-line tape — tap team buttons as runners cross' },
   { value: 'participant_attempts',  label: 'Attempt Tracker',    desc: 'Track hits/misses per participant' },
   { value: 'cumulative',            label: 'Cumulative Rounds',  desc: 'Scores add up across rounds' },
   { value: 'match_play',            label: 'Match Play',         desc: 'Teams paired in matches, points for win/loss' },
@@ -251,7 +251,7 @@ export default function EditionWorkspace() {
     setIsFunGame(g.is_fun ?? false)
     setParticipantsPerTeam(g.participants_per_team ?? 1)
     setAttemptsPerParticipant(g.attempts_per_participant ?? 1)
-    setBonusPerFinisher(g.type === 'marathon' ? (g.participants_per_team ?? 0) : 0)
+    setBonusPerFinisher(g.type === 'tape' ? (g.participants_per_team ?? 0) : 0)
     setShowGameForm(true)
   }
 
@@ -264,15 +264,15 @@ export default function EditionWorkspace() {
       weight, status: gameStatus, is_fun: isFunGame,
       ...((gameType === 'participant_attempts') ? { participants_per_team: participantsPerTeam, attempts_per_participant: attemptsPerParticipant } : {}),
       ...((gameType === 'tally' || gameType === 'lives' || gameType === 'head_to_head') ? { participants_per_team: participantsPerTeam } : {}),
-      ...((gameType === 'marathon') ? { participants_per_team: bonusPerFinisher } : {}),
+      ...((gameType === 'tape') ? { participants_per_team: bonusPerFinisher } : {}),
     }
     if (editingGame) updateGame(editingGame.id, base)
     else addGame({ ...base, order: games.length + 1 })
     setShowGameForm(false)
   }
 
-  const needsDirection = ['standard', 'multi_participant', 'marathon', 'cumulative', 'points', 'tally'].includes(gameType)
-  const needsScoringMode = ['standard', 'points', 'multi_participant', 'marathon', 'participant_attempts', 'cumulative', 'tally', 'lives', 'head_to_head'].includes(gameType)
+  const needsDirection = ['standard', 'multi_participant', 'tape', 'cumulative', 'points', 'tally'].includes(gameType)
+  const needsScoringMode = ['standard', 'points', 'multi_participant', 'tape', 'participant_attempts', 'cumulative', 'tally', 'lives', 'head_to_head'].includes(gameType)
   return (
     <div className="admin-root">
       <AdminHeader
@@ -367,7 +367,7 @@ export default function EditionWorkspace() {
                     <span className="wsgr-type">
                       {GAME_TYPES.find(t => t.value === game.type)?.label}
                       {game.weight !== 1 && ` · ${game.weight}×`}
-                      {game.type === 'marathon' && (game.participants_per_team ?? 0) > 0 && ` · +${game.participants_per_team}pts/finisher`}
+                      {game.type === 'tape' && (game.participants_per_team ?? 0) > 0 && ` · +${game.participants_per_team}pts/finisher`}
                     </span>
                   </div>
                 </div>
@@ -565,7 +565,7 @@ export default function EditionWorkspace() {
                 </>
               )}
 
-              {gameType === 'marathon' && (
+              {gameType === 'tape' && (
                 <>
                   <label className="modal-label">
                     Bonus pts per finisher

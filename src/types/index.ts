@@ -52,7 +52,7 @@ export type GameType =
   | 'standard'
   | 'points'
   | 'multi_participant'
-  | 'marathon'
+  | 'tape'
   | 'participant_attempts'
   | 'cumulative'
   | 'bracket_single'

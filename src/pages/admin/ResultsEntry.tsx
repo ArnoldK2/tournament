@@ -318,7 +318,7 @@ export default function ResultsEntry({ game, eventId }: Props) {
     )
   }
 
-  if (game.type === 'marathon') return <TapeEntry game={game} teams={teams} />
+  if (game.type === 'tape') return <TapeEntry game={game} teams={teams} />
 
   // ── Multi-participant ─────────────────────────────────────
   if (game.type === 'multi_participant') {
