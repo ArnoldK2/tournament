@@ -55,9 +55,7 @@
 }
 
 [data-theme="waga"] .aud-house-btn {
-  border-color: rgba(0, 0, 0, 0.12);
-  background: rgba(0, 0, 0, 0.04);
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(0, 0, 0, 0.6);
 }
 
 [data-theme="waga"] .aud-house-btn.active {

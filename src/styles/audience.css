@@ -94,9 +94,9 @@
 .aud-house-btn {
   padding: 0.4rem 0.9rem;
   border-radius: 100px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid color-mix(in srgb, var(--hc, #6366f1) 35%, transparent);
+  background: color-mix(in srgb, var(--hc, #6366f1) 10%, transparent);
+  color: rgba(255, 255, 255, 0.6);
   font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
@@ -105,7 +105,7 @@
 }
 
 .aud-house-btn.active {
-  background: color-mix(in srgb, var(--hc, #6366f1) 20%, transparent);
+  background: color-mix(in srgb, var(--hc, #6366f1) 25%, transparent);
   border-color: var(--hc, #6366f1);
   color: #fff;
 }

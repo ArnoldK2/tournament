@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
 import { supabase } from '../lib/supabase'
+import { useClientTheme } from '../hooks/useClientTheme'
 import '../styles/audience.css'
 
 export default function FeedbackPage() {
@@ -21,6 +22,8 @@ export default function FeedbackPage() {
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+
+  useClientTheme(client?.id)
 
   if (!edition || !event || !client) {
     return (
