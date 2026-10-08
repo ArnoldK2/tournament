@@ -1,12 +1,24 @@
 import type {
-  Game, Team, LeaderboardEntry,
+  Game, Team, LeaderboardEntry, Edition,
   StandardResult, PointsResult, ParticipantResult,
   ParticipantAttemptResult, CumulativeRound, BracketMatch,
+  ScoringSystem,
 } from '../types'
+
+// F1 points for positions 1–10; beyond 10 gets 1pt
+const F1_BASE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+
+export function basePointsForRank(rank: number, total: number, system: ScoringSystem, gap: number): number {
+  if (system === 'f1') return F1_BASE[rank - 1] ?? 1
+  if (system === 'degressive') return Math.max(1, total - rank + 1)
+  // classic: top place = gap * (n-1) + 1, each step down loses `gap`
+  return Math.max(1, (total - rank) * gap + 1)
+}
 
 interface ScoringData {
   games: Game[]
   teams: Team[]
+  edition?: Edition
   standardResults: StandardResult[]
   pointsResults: PointsResult[]
   participantResults: ParticipantResult[]
@@ -15,20 +27,22 @@ interface ScoringData {
   bracketMatches: BracketMatch[]
 }
 
-function rankPoints(rank: number, total: number, weight: number, fixed = false) {
-  const base = Math.max(0, total - rank + 1)
+function rankPoints(rank: number, total: number, weight: number, fixed: boolean, system: ScoringSystem, gap: number) {
+  const base = basePointsForRank(rank, total, system, gap)
   return fixed ? base : base * weight
 }
 
-function computeStandard(game: Game, teams: Team[], results: StandardResult[], fixed: boolean): Map<string, number> {
+type RP = { system: ScoringSystem; gap: number }
+
+function computeStandard(game: Game, teams: Team[], results: StandardResult[], fixed: boolean, rp: RP): Map<string, number> {
   const out = new Map<string, number>()
   const gameResults = results.filter(r => r.game_id === game.id)
   const n = teams.length
-  for (const r of gameResults) out.set(r.team_id, rankPoints(r.position, n, game.weight, fixed))
+  for (const r of gameResults) out.set(r.team_id, rankPoints(r.position, n, game.weight, fixed, rp.system, rp.gap))
   return out
 }
 
-function computePoints(game: Game, teams: Team[], results: PointsResult[], fixed: boolean): Map<string, number> {
+function computePoints(game: Game, teams: Team[], results: PointsResult[], fixed: boolean, rp: RP): Map<string, number> {
   const out = new Map<string, number>()
   const gameResults = results.filter(r => r.game_id === game.id)
   if (!gameResults.length) return out
@@ -45,19 +59,17 @@ function computePoints(game: Game, teams: Team[], results: PointsResult[], fixed
   let rank = 1
   for (let i = 0; i < sorted.length; i++) {
     if (i > 0 && sorted[i].raw_score !== sorted[i - 1].raw_score) rank = i + 1
-    out.set(sorted[i].team_id, rankPoints(rank, n, game.weight, true))
+    out.set(sorted[i].team_id, rankPoints(rank, n, game.weight, true, rp.system, rp.gap))
   }
   return out
 }
 
-function computeMultiParticipant(game: Game, teams: Team[], results: ParticipantResult[], fixed: boolean): Map<string, number> {
+function computeMultiParticipant(game: Game, teams: Team[], results: ParticipantResult[], fixed: boolean, rp: RP): Map<string, number> {
   const out = new Map<string, number>()
   const gameResults = results.filter(r => r.game_id === game.id)
   const N = gameResults.length
   const teamTotals = new Map<string, number>()
   for (const r of gameResults) {
-    // lower_is_better (marathon): invert so position 1 contributes most points
-    // higher_is_better (musical chairs): raw position already rewards later survivors
     const contribution = game.scoring_direction === 'lower_is_better' ? N - r.position + 1 : r.position
     teamTotals.set(r.team_id, (teamTotals.get(r.team_id) ?? 0) + contribution)
   }
@@ -66,12 +78,12 @@ function computeMultiParticipant(game: Game, teams: Team[], results: Participant
   let rank = 1
   for (let i = 0; i < sorted.length; i++) {
     if (i > 0 && sorted[i][1] !== sorted[i - 1][1]) rank = i + 1
-    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed))
+    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed, rp.system, rp.gap))
   }
   return out
 }
 
-function computeParticipantAttempts(game: Game, teams: Team[], results: ParticipantAttemptResult[], fixed: boolean): Map<string, number> {
+function computeParticipantAttempts(game: Game, teams: Team[], results: ParticipantAttemptResult[], fixed: boolean, rp: RP): Map<string, number> {
   const out = new Map<string, number>()
   const gameResults = results.filter(r => r.game_id === game.id)
   if (!gameResults.length) return out
@@ -84,12 +96,12 @@ function computeParticipantAttempts(game: Game, teams: Team[], results: Particip
   let rank = 1
   for (let i = 0; i < sorted.length; i++) {
     if (i > 0 && sorted[i][1] !== sorted[i - 1][1]) rank = i + 1
-    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed))
+    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed, rp.system, rp.gap))
   }
   return out
 }
 
-function computeCumulative(game: Game, teams: Team[], rounds: CumulativeRound[], fixed: boolean): Map<string, number> {
+function computeCumulative(game: Game, teams: Team[], rounds: CumulativeRound[], fixed: boolean, rp: RP): Map<string, number> {
   const out = new Map<string, number>()
   const gameRounds = rounds.filter(r => r.game_id === game.id)
   const totals = new Map<string, number>()
@@ -103,12 +115,12 @@ function computeCumulative(game: Game, teams: Team[], rounds: CumulativeRound[],
   let rank = 1
   for (let i = 0; i < sorted.length; i++) {
     if (i > 0 && sorted[i][1] !== sorted[i - 1][1]) rank = i + 1
-    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed))
+    out.set(sorted[i][0], rankPoints(rank, n, game.weight, fixed, rp.system, rp.gap))
   }
   return out
 }
 
-function computeLives(game: Game, teams: Team[], results: PointsResult[]): Map<string, number> {
+function computeLives(game: Game, teams: Team[], results: PointsResult[], rp: RP): Map<string, number> {
   const out = new Map<string, number>()
   const gameResults = results.filter(r => r.game_id === game.id)
   if (!gameResults.length) return out
@@ -116,15 +128,13 @@ function computeLives(game: Game, teams: Team[], results: PointsResult[]): Map<s
   const surviving = [...gameResults.filter(r => r.raw_score > 0)]
     .sort((a, b) => b.raw_score - a.raw_score)
   const eliminated = gameResults.filter(r => r.raw_score === 0)
-  // Surviving teams ranked by lives left (dense ranking — ties share rank, no gaps)
   let denseRank = 0
   for (let i = 0; i < surviving.length; i++) {
     if (i === 0 || surviving[i].raw_score !== surviving[i - 1].raw_score) denseRank++
-    out.set(surviving[i].team_id, rankPoints(denseRank, n, game.weight, false))
+    out.set(surviving[i].team_id, rankPoints(denseRank, n, game.weight, false, rp.system, rp.gap))
   }
-  // All eliminated teams share last place (1 pt regardless of how many)
   for (const r of eliminated) {
-    out.set(r.team_id, rankPoints(n, n, game.weight, false))
+    out.set(r.team_id, rankPoints(n, n, game.weight, false, rp.system, rp.gap))
   }
   return out
 }
@@ -149,7 +159,7 @@ function computeMatchPlay(game: Game, matches: BracketMatch[]): Map<string, numb
   return out
 }
 
-function computeBracket(game: Game, teams: Team[], matches: BracketMatch[], fixed: boolean): Map<string, number> {
+function computeBracket(game: Game, teams: Team[], matches: BracketMatch[], fixed: boolean, rp: RP): Map<string, number> {
   const out = new Map<string, number>()
   const gameMatches = matches.filter(m => m.game_id === game.id)
   if (!gameMatches.length) return out
@@ -166,7 +176,7 @@ function computeBracket(game: Game, teams: Team[], matches: BracketMatch[], fixe
     const score = wins.get(sorted[i].id) ?? 0
     const prevScore = i > 0 ? (wins.get(sorted[i - 1].id) ?? 0) : score
     if (i > 0 && score !== prevScore) rank = i + 1
-    out.set(sorted[i].id, rankPoints(rank, n, game.weight, fixed))
+    out.set(sorted[i].id, rankPoints(rank, n, game.weight, fixed, rp.system, rp.gap))
   }
   return out
 }
@@ -178,15 +188,20 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
   const teamScores = new Map<string, { game_id: string; game_name: string; score: number; game_rank: number }[]>()
   for (const team of teams) teamScores.set(team.id, [])
 
+  const rp: RP = {
+    system: data.edition?.scoring_system ?? 'classic',
+    gap: data.edition?.scoring_gap ?? 5,
+  }
+
   for (const game of scorableGames) {
     const fixed = game.scoring_mode === 'fixed'
     let gameMap: Map<string, number>
     switch (game.type) {
-      case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed); break
-      case 'points':                gameMap = computePoints(game, teams, data.pointsResults, fixed); break
-      case 'multi_participant':     gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed); break
+      case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed, rp); break
+      case 'points':                gameMap = computePoints(game, teams, data.pointsResults, fixed, rp); break
+      case 'multi_participant':     gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed, rp); break
       case 'tape': {
-        gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed)
+        gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed, rp)
         const bonus = game.participants_per_team ?? 0
         if (bonus > 0) {
           const counts = new Map<string, number>()
@@ -197,20 +212,20 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
         }
         break
       }
-      case 'participant_attempts':  gameMap = computeParticipantAttempts(game, teams, data.participantAttemptResults, fixed); break
-      case 'cumulative':            gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed); break
-      case 'tally':                 gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed); break
-      case 'lives':                 gameMap = computeLives(game, teams, data.pointsResults); break
+      case 'participant_attempts':  gameMap = computeParticipantAttempts(game, teams, data.participantAttemptResults, fixed, rp); break
+      case 'cumulative':            gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed, rp); break
+      case 'tally':                 gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed, rp); break
+      case 'lives':                 gameMap = computeLives(game, teams, data.pointsResults, rp); break
       case 'head_to_head': {
         const hthRounds = data.cumulativeRounds.filter(r => r.game_id === game.id)
         console.log(`[scoring] head_to_head "${game.name}": ${hthRounds.length} cumulative rounds, first:`, hthRounds[0])
-        gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed)
+        gameMap = computeCumulative(game, teams, data.cumulativeRounds, fixed, rp)
         console.log(`[scoring] head_to_head "${game.name}": gameMap size=${gameMap.size}`, Object.fromEntries(gameMap))
         break
       }
       case 'completion':            gameMap = computeCompletion(game, data.pointsResults); break
       case 'match_play':            gameMap = computeMatchPlay(game, data.bracketMatches); break
-      default:                      gameMap = computeBracket(game, teams, data.bracketMatches, fixed); break
+      default:                      gameMap = computeBracket(game, teams, data.bracketMatches, fixed, rp); break
     }
     // Compute per-game rank (ties share the same rank)
     const sorted = [...teams].sort((a, b) => (gameMap.get(b.id) ?? 0) - (gameMap.get(a.id) ?? 0))

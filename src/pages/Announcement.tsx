@@ -154,9 +154,9 @@ export default function Announcement() {
   )
 
   const entries = useMemo(() => computeLeaderboard({
-    games, teams,
+    games, teams, edition,
     standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
-  }), [games, teams, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches])
+  }), [games, teams, edition, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches])
 
   // worst first, but 1st place goes straight to champion screen
   const revealOrder = useMemo(() => [...entries].sort((a, b) => b.rank - a.rank), [entries])

@@ -235,7 +235,7 @@ export default function Leaderboard() {
   const entries = useMemo(() => {
     if (!teams.length || !games.length) return []
     const computed = computeLeaderboard({
-      games, teams,
+      games, teams, edition,
       standardResults, pointsResults,
       participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
     })

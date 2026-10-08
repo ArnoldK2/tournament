@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../../store'
-import { computeLeaderboard } from '../../store/scoring'
+import { computeLeaderboard, basePointsForRank } from '../../store/scoring'
 import { editionStatus } from '../../lib/editionStatus'
 import AdminHeader from '../../components/AdminHeader'
 import ResultsEntry from './ResultsEntry'
-import type { Game, GameType, ScoringDirection, Team, GameParticipant } from '../../types'
+import type { Game, GameType, ScoringDirection, ScoringSystem, Team, GameParticipant } from '../../types'
 import '../../styles/admin.css'
 import '../../styles/workspace.css'
 
@@ -192,6 +192,7 @@ export default function EditionWorkspace() {
   const role = useStore(s => s.currentRole)
   const addGame = useStore(s => s.addGame)
   const updateGame = useStore(s => s.updateGame)
+  const updateEdition = useStore(s => s.updateEdition)
   const copyGamesToEdition = useStore(s => s.copyGamesToEdition)
   const clearEditionResults = useStore(s => s.clearEditionResults)
 
@@ -222,6 +223,9 @@ export default function EditionWorkspace() {
   const [showClearModal, setShowClearModal] = useState(false)
   const [clearConfirm, setClearConfirm] = useState('')
   const [showEditionSettings, setShowEditionSettings] = useState(false)
+  const [settingsSystem, setSettingsSystem] = useState<ScoringSystem>(edition?.scoring_system ?? 'classic')
+  const [settingsGap, setSettingsGap] = useState<number>(edition?.scoring_gap ?? 5)
+  const [settingsSaving, setSettingsSaving] = useState(false)
   const [clearing, setClearing] = useState(false)
 
   // Game form state
@@ -460,31 +464,97 @@ export default function EditionWorkspace() {
 
       {/* ── Edition Settings Modal ── */}
       <AnimatePresence>
-        {showEditionSettings && (
-          <motion.div
-            className="modal-backdrop"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setShowEditionSettings(false)}
-          >
+        {showEditionSettings && (() => {
+          const n = teams.length || 6
+          const previewPts = Array.from({ length: n }, (_, i) =>
+            basePointsForRank(i + 1, n, settingsSystem, settingsGap)
+          )
+          return (
             <motion.div
-              className="admin-modal"
-              style={{ maxWidth: 400 }}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-              onClick={e => e.stopPropagation()}
+              className="modal-backdrop"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowEditionSettings(false)}
             >
-              <h2 className="modal-title">Edition Settings</h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--admin-sub)', margin: 0 }}>
-                Scoring system and other edition-level options coming soon.
-              </p>
-              <div className="modal-actions">
-                <button className="modal-btn secondary" onClick={() => setShowEditionSettings(false)}>Close</button>
-              </div>
+              <motion.div
+                className="admin-modal"
+                style={{ maxWidth: 440 }}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <h2 className="modal-title">Edition Settings</h2>
+
+                <label className="modal-label">Scoring System</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {([
+                    { value: 'f1', label: 'F1 Style', desc: 'Unequal gaps — winning is clearly rewarded, mid-table stays competitive' },
+                    { value: 'degressive', label: 'Degressive', desc: 'Flat 1pt gaps — standings stay tight all day, every position matters equally' },
+                    { value: 'classic', label: 'Classic', desc: 'Equal gaps — you set the points difference between each place' },
+                  ] as { value: ScoringSystem; label: string; desc: string }[]).map(opt => (
+                    <label key={opt.value} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
+                      padding: '0.6rem 0.75rem', borderRadius: 8, cursor: 'pointer',
+                      border: `1px solid ${settingsSystem === opt.value ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                      background: settingsSystem === opt.value ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.02)',
+                    }}>
+                      <input type="radio" name="scoring_system" value={opt.value}
+                        checked={settingsSystem === opt.value}
+                        onChange={() => setSettingsSystem(opt.value)}
+                        style={{ marginTop: 2, accentColor: '#a78bfa' }}
+                      />
+                      <span>
+                        <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{opt.label}</span>
+                        <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--admin-sub)', marginTop: 2 }}>{opt.desc}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                {settingsSystem === 'classic' && (
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <label className="modal-label">Points gap between places</label>
+                    <input
+                      className="modal-input"
+                      type="number" min={1} max={50}
+                      value={settingsGap}
+                      onChange={e => setSettingsGap(Math.max(1, parseInt(e.target.value) || 1))}
+                      style={{ width: 80 }}
+                    />
+                  </div>
+                )}
+
+                <div style={{ marginTop: '0.9rem' }}>
+                  <label className="modal-label">Points preview ({n} teams)</label>
+                  <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                    {previewPts.map((pts, i) => (
+                      <div key={i} style={{
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 6, padding: '0.3rem 0.55rem', textAlign: 'center', minWidth: 44,
+                      }}>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--admin-sub)' }}>#{i + 1}</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{pts}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button className="modal-btn secondary" onClick={() => setShowEditionSettings(false)}>Cancel</button>
+                  <button className="modal-btn primary" disabled={settingsSaving} onClick={async () => {
+                    setSettingsSaving(true)
+                    await updateEdition(editionId!, { scoring_system: settingsSystem, scoring_gap: settingsGap })
+                    setSettingsSaving(false)
+                    setShowEditionSettings(false)
+                  }}>
+                    {settingsSaving ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )
+        })()}
       </AnimatePresence>
 
       {/* ── Clear Results Modal (super_admin only) ── */}

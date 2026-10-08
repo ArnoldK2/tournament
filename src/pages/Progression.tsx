@@ -50,6 +50,7 @@ function buildFrames(editionId: string, store: AppState): Frame[] {
     const lb = computeLeaderboard({
       games: gamesUpTo,
       teams,
+      edition,
       standardResults: store.standardResults,
       pointsResults: store.pointsResults,
       participantResults: store.participantResults,

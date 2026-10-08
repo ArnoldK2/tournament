@@ -39,6 +39,8 @@ export interface Team {
   is_fun?: boolean
 }
 
+export type ScoringSystem = 'classic' | 'f1' | 'degressive'
+
 export interface Edition {
   id: string
   event_id: string
@@ -46,6 +48,8 @@ export interface Edition {
   date: string
   status: 'upcoming' | 'active' | 'completed'
   scoring_mode?: 'dynamic' | 'fixed'
+  scoring_system?: ScoringSystem
+  scoring_gap?: number
 }
 
 export type GameType =
