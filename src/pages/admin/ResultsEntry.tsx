@@ -318,6 +318,8 @@ export default function ResultsEntry({ game, eventId }: Props) {
     )
   }
 
+  if (game.type === 'marathon') return <TapeEntry game={game} teams={teams} />
+
   // ── Multi-participant ─────────────────────────────────────
   if (game.type === 'multi_participant') {
     const dirLabel = game.scoring_direction === 'lower_is_better'
@@ -348,7 +350,6 @@ export default function ResultsEntry({ game, eventId }: Props) {
           </div>
         ))}
         <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
-          // Name is optional — only require position
           const results = teams.flatMap(t =>
             (participants[t.id] ?? [])
               .filter(r => r.position)
@@ -473,7 +474,6 @@ export default function ResultsEntry({ game, eventId }: Props) {
     )
   }
 
-  if (game.type === 'marathon') return <MarathonEntry game={game} teams={teams} />
   if (game.type === 'match_play') return <MatchPlayEntry game={game} teams={teams} />
   if (game.type === 'completion') return <CompletionEntry game={game} teams={teams} />
   if (game.type === 'tally') return <TallyEntry game={game} teams={teams} />
@@ -1154,14 +1154,14 @@ function HeadToHeadEntry({ game, teams }: { game: Game; teams: Team[] }) {
   )
 }
 
-// ── Marathon Entry ────────────────────────────────────────────
-function MarathonEntry({ game, teams }: { game: Game; teams: Team[] }) {
+// ── Tape Entry (Marathon) ─────────────────────────────────────
+function TapeEntry({ game, teams }: { game: Game; teams: Team[] }) {
   const participantResults = useStore(s => s.participantResults)
   const saveParticipantResults = useStore(s => s.saveParticipantResults)
   const updateGame = useStore(s => s.updateGame)
   const logAudit = useStore(s => s.logAudit)
 
-  const [finishOrder, setFinishOrder] = useState<string[]>(() => {
+  const [tapOrder, setTapOrder] = useState<string[]>(() => {
     const existing = participantResults
       .filter(r => r.game_id === game.id)
       .sort((a, b) => a.position - b.position)
@@ -1172,30 +1172,30 @@ function MarathonEntry({ game, teams }: { game: Game; teams: Team[] }) {
   const [saved, setSaved] = useState(false)
   const tapeRef = useRef<HTMLDivElement>(null)
 
-  const countMap = finishOrder.reduce<Record<string, number>>((acc, id) => {
+  const countMap = tapOrder.reduce<Record<string, number>>((acc, id) => {
     acc[id] = (acc[id] ?? 0) + 1
     return acc
   }, {})
 
   function tapTeam(teamId: string) {
-    setFinishOrder(prev => {
+    setTapOrder(prev => {
       const next = [...prev, teamId]
       setTimeout(() => { tapeRef.current?.scrollTo({ top: tapeRef.current.scrollHeight, behavior: 'smooth' }) }, 30)
       return next
     })
   }
 
-  function undo() { setFinishOrder(prev => prev.slice(0, -1)) }
+  function undo() { setTapOrder(prev => prev.slice(0, -1)) }
 
   async function handleConfirm() {
     setShowPin(false)
-    const results = finishOrder.map((teamId, i) => ({
+    const results = tapOrder.map((teamId, i) => ({
       team_id: teamId, participant_name: '', position: i + 1,
     }))
     await saveParticipantResults(game.id, results)
     await updateGame(game.id, { status: 'completed' })
     await logAudit('save_results', game.id, game.name, {
-      type: 'marathon',
+      type: game.type,
       participant_count: results.length,
       entries: results.map(r => ({
         position: r.position,
@@ -1212,13 +1212,13 @@ function MarathonEntry({ game, teams }: { game: Game; teams: Team[] }) {
       <p className="re-hint">Tap a team each time one of their runners crosses the finish line</p>
 
       <div className="marathon-tape" ref={tapeRef}>
-        {finishOrder.length === 0
+        {tapOrder.length === 0
           ? <p className="marathon-tape-empty">No finishers recorded yet</p>
-          : finishOrder.map((teamId, i) => {
+          : tapOrder.map((teamId, i) => {
               const team = teams.find(t => t.id === teamId)
               return (
                 <div key={i} className="marathon-tape-row">
-                  <span className="marathon-pos">#{i + 1}</span>
+                  <span className="marathon-pos">🏃 #{i + 1}</span>
                   <span className="marathon-dot" style={{ background: team?.color }} />
                   <span className="marathon-team-name">{team?.name}</span>
                 </div>
@@ -1227,7 +1227,7 @@ function MarathonEntry({ game, teams }: { game: Game; teams: Team[] }) {
         }
       </div>
 
-      {!isComplete && finishOrder.length > 0 && (
+      {!isComplete && tapOrder.length > 0 && (
         <button className="marathon-undo" onClick={undo}>↺ Undo last</button>
       )}
 
@@ -1257,7 +1257,7 @@ function MarathonEntry({ game, teams }: { game: Game; teams: Team[] }) {
         ))}
       </div>
 
-      {!isComplete && finishOrder.length > 0 && (
+      {!isComplete && tapOrder.length > 0 && (
         <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => setShowPin(true)}>
           {saved ? '✓ Saved' : 'Finish Marathon'}
         </button>
