@@ -187,9 +187,10 @@ function BigScreenLeaderboard({
         <div className="bs-qr">
           <QRCodeSVG
             value={`${window.location.origin}/register/${editionId}`}
-            size={240}
+            size={320}
             bgColor="transparent"
             fgColor="currentColor"
+            level="H"
           />
           <span className="bs-qr-label">Scan to join</span>
         </div>
