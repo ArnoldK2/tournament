@@ -84,7 +84,7 @@ function PenalizeRow({ team, onPenalize }: { team: Team; onPenalize: () => Promi
           setState('saving')
           await onPenalize()
         }}>
-          {state === 'saving' ? '…' : 'Yes, penalize'}
+          Yes, penalize
         </button>
         <button className="penalty-btn remove" onClick={() => setState('idle')}>Cancel</button>
       </div>
