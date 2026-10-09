@@ -132,7 +132,7 @@ export const useStore = create<AppState>((set, get) => ({
       clients: (clients ?? []).map(r => ({ id: r.id, organization_id: r.organization_id, name: r.name, slug: r.slug, logo_color: r.logo_color })),
       events: (events ?? []).map(r => ({ id: r.id, client_id: r.client_id, name: r.name, description: r.description })),
       teams: (teams ?? []).map(r => ({ id: r.id, event_id: r.event_id, name: r.name, color: r.color, is_fun: r.is_fun ?? false })),
-      editions: (editions ?? []).map(r => ({ id: r.id, event_id: r.event_id, label: r.label, date: r.date, status: r.status, scoring_mode: r.scoring_mode ?? 'dynamic' })),
+      editions: (editions ?? []).map(r => ({ id: r.id, event_id: r.event_id, label: r.label, date: r.date, status: r.status, scoring_mode: r.scoring_mode ?? 'dynamic', scoring_system: r.scoring_system ?? undefined, scoring_gap: r.scoring_gap ?? undefined })),
       games: (games ?? []).map(r => ({ id: r.id, edition_id: r.edition_id, name: r.name, type: r.type, scoring_direction: r.scoring_direction, scoring_mode: r.scoring_mode ?? 'dynamic', weight: r.weight, status: r.status, order: r.order, participants_per_team: r.participants_per_team ?? 1, attempts_per_participant: r.attempts_per_participant ?? 1, is_fun: r.is_fun ?? false, started_at: r.started_at ?? undefined })),
       standardResults: (standardResults ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, position: r.position })),
       pointsResults: (pointsResults ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, raw_score: r.raw_score })),
@@ -224,7 +224,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   addEdition: async (data) => {
     const { data: row } = await supabase.from('editions').insert(data).select().single()
-    if (row) set(s => ({ editions: [...s.editions, { id: row.id, event_id: row.event_id, label: row.label, date: row.date, status: row.status, scoring_mode: row.scoring_mode ?? 'dynamic' }] }))
+    if (row) set(s => ({ editions: [...s.editions, { id: row.id, event_id: row.event_id, label: row.label, date: row.date, status: row.status, scoring_mode: row.scoring_mode ?? 'dynamic', scoring_system: row.scoring_system ?? undefined, scoring_gap: row.scoring_gap ?? undefined }] }))
   },
 
   updateEdition: async (id, data) => {
