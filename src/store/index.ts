@@ -397,6 +397,7 @@ export const useStore = create<AppState>((set, get) => ({
       { data: cr },
       { data: bm },
       { data: gp },
+      { data: penalties },
     ] = await Promise.all([
       supabase.from('standard_results').select('*').in('game_id', gameIds),
       supabase.from('points_results').select('*').in('game_id', gameIds),
@@ -405,6 +406,7 @@ export const useStore = create<AppState>((set, get) => ({
       supabase.from('cumulative_rounds').select('*').in('game_id', gameIds).order('round_number'),
       supabase.from('bracket_matches').select('*').in('game_id', gameIds),
       supabase.from('game_participants').select('*').in('game_id', gameIds).order('sort_order'),
+      supabase.from('game_penalties').select('*').in('game_id', gameIds),
     ])
     set(s => ({
       standardResults: [
@@ -434,6 +436,10 @@ export const useStore = create<AppState>((set, get) => ({
       gameParticipants: [
         ...s.gameParticipants.filter(r => !allIds.includes(r.game_id)),
         ...(gp ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, name: r.name, sort_order: r.sort_order })),
+      ],
+      gamePenalties: [
+        ...s.gamePenalties.filter(r => !allIds.includes(r.game_id)),
+        ...(penalties ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, reason: r.reason ?? undefined })),
       ],
       games: [
         ...s.games.filter(g => g.edition_id !== editionId),
