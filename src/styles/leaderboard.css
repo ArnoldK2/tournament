@@ -673,11 +673,11 @@
 }
 .bs-qr svg { display: block; border-radius: 0.4rem; }
 .bs-qr-label {
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 /* ControlMenu sits inline inside the cluster */
