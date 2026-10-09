@@ -237,11 +237,33 @@ export default function Leaderboard() {
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingGameIdRef = useRef<string | null>(null)
 
+  function playChime() {
+    try {
+      const ctx = new AudioContext()
+      const notes = [784, 1047] // G5 → C6
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.type = 'sine'
+        osc.frequency.value = freq
+        const t = ctx.currentTime + i * 0.18
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(0.18, t + 0.02)
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5)
+        osc.start(t)
+        osc.stop(t + 0.5)
+      })
+    } catch { /* AudioContext unavailable */ }
+  }
+
   function triggerFlash(msg: string) {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
     setFlashMessage(msg)
     flashTimerRef.current = setTimeout(() => setFlashMessage(null), 3000)
     if (!isBigScreen && 'vibrate' in navigator) navigator.vibrate([80, 40, 80])
+    playChime()
   }
 
   // useMemo computes entries on the same render as the store update,
