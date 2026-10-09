@@ -185,7 +185,7 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
   const { games } = data
   const teams = data.teams.filter(t => !t.is_fun)
   const scorableGames = games.filter(g => g.status !== 'pending' && !g.is_fun)
-  const teamScores = new Map<string, { game_id: string; game_name: string; score: number; game_rank: number }[]>()
+  const teamScores = new Map<string, { game_id: string; game_name: string; score: number; game_rank: number; base_score?: number; bonus_score?: number }[]>()
   for (const team of teams) teamScores.set(team.id, [])
 
   const rp: RP = {
