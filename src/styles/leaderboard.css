@@ -673,7 +673,7 @@
 }
 .bs-qr svg { display: block; border-radius: 0.4rem; }
 .bs-qr-label {
-  font-size: 1.1rem;
+  font-size: 2.5rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
