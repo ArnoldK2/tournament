@@ -196,19 +196,24 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
   for (const game of scorableGames) {
     const fixed = game.scoring_mode === 'fixed'
     let gameMap: Map<string, number>
+    let bonusMap: Map<string, number> | undefined
     switch (game.type) {
       case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed, rp); break
       case 'points':                gameMap = computePoints(game, teams, data.pointsResults, fixed, rp); break
       case 'multi_participant':     gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed, rp); break
       case 'tape': {
         gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed, rp)
-        const bonus = game.participants_per_team ?? 0
-        if (bonus > 0) {
+        const bonusPer = game.participants_per_team ?? 0
+        if (bonusPer > 0) {
+          bonusMap = new Map<string, number>()
           const counts = new Map<string, number>()
           for (const r of data.participantResults.filter(r => r.game_id === game.id))
             counts.set(r.team_id, (counts.get(r.team_id) ?? 0) + 1)
-          for (const [teamId, count] of counts)
-            gameMap.set(teamId, (gameMap.get(teamId) ?? 0) + count * bonus)
+          for (const [teamId, count] of counts) {
+            const b = count * bonusPer
+            bonusMap.set(teamId, b)
+            gameMap.set(teamId, (gameMap.get(teamId) ?? 0) + b)
+          }
         }
         break
       }
@@ -239,7 +244,9 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
     for (const team of teams) {
       const raw = gameMap.get(team.id) ?? 0
       const score = hasResults ? Math.max(1, raw) : 0
-      teamScores.get(team.id)!.push({ game_id: game.id, game_name: game.name, score, game_rank: gameRankMap.get(team.id) ?? 0 })
+      const bonus_score = bonusMap?.get(team.id)
+      const base_score = bonus_score !== undefined ? score - bonus_score : undefined
+      teamScores.get(team.id)!.push({ game_id: game.id, game_name: game.name, score, game_rank: gameRankMap.get(team.id) ?? 0, base_score, bonus_score })
     }
   }
 

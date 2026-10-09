@@ -77,7 +77,12 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
           {g.score > 0
             ? <>
                 <span className="lb-breakdown-rank">{ordinal(g.game_rank)}</span>
-                <span className="lb-breakdown-score">+{Math.round(g.score * 10) / 10}</span>
+                {g.base_score !== undefined && g.bonus_score !== undefined
+                  ? <span className="lb-breakdown-score">
+                      +{g.base_score} <span className="lb-breakdown-bonus">+{g.bonus_score} bonus</span>
+                    </span>
+                  : <span className="lb-breakdown-score">+{Math.round(g.score * 10) / 10}</span>
+                }
               </>
             : <span className="lb-breakdown-score">—</span>
           }
