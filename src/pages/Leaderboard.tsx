@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion'
 import type { LeaderboardEntry } from '../types'
@@ -183,6 +184,15 @@ function BigScreenLeaderboard({
       )}
 
       <div className="bs-topright">
+        <div className="bs-qr">
+          <QRCodeSVG
+            value={`${window.location.origin}/register/${editionId}`}
+            size={96}
+            bgColor="transparent"
+            fgColor="currentColor"
+          />
+          <span className="bs-qr-label">Scan to join</span>
+        </div>
         <BrandLogos orgId={orgId} variant="inline" />
         <ControlMenu editionId={editionId} currentView="bigscreen" role={role} />
       </div>
