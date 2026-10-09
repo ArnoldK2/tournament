@@ -35,11 +35,21 @@ function rankPoints(rank: number, total: number, weight: number, fixed: boolean,
 
 type RP = { system: ScoringSystem; gap: number }
 
-function computeStandard(game: Game, teams: Team[], results: StandardResult[], fixed: boolean, rp: RP): Map<string, number> {
+function computeStandard(game: Game, teams: Team[], results: StandardResult[], fixed: boolean, rp: RP, penalizedIds?: Set<string>): Map<string, number> {
   const out = new Map<string, number>()
   const gameResults = results.filter(r => r.game_id === game.id)
   const n = teams.length
-  for (const r of gameResults) out.set(r.team_id, rankPoints(r.position, n, game.weight, fixed, rp.system, rp.gap))
+  if (!penalizedIds?.size) {
+    for (const r of gameResults) out.set(r.team_id, rankPoints(r.position, n, game.weight, fixed, rp.system, rp.gap))
+    return out
+  }
+  // Re-rank non-penalized teams by original position order (DQ → everyone moves up)
+  const active = gameResults.filter(r => !penalizedIds.has(r.team_id)).sort((a, b) => a.position - b.position)
+  let newRank = 1
+  for (let i = 0; i < active.length; i++) {
+    if (i > 0 && active[i].position !== active[i - 1].position) newRank = i + 1
+    out.set(active[i].team_id, rankPoints(newRank, n, game.weight, fixed, rp.system, rp.gap))
+  }
   return out
 }
 
@@ -196,10 +206,12 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
 
   for (const game of scorableGames) {
     const fixed = game.scoring_mode === 'fixed'
+    const gamePenaltyMap = new Map((data.gamePenalties ?? []).filter(p => p.game_id === game.id).map(p => [p.team_id, p.reason]))
+    const penalizedIds = new Set(gamePenaltyMap.keys())
     let gameMap: Map<string, number>
     let bonusMap: Map<string, number> | undefined
     switch (game.type) {
-      case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed, rp); break
+      case 'standard':              gameMap = computeStandard(game, teams, data.standardResults, fixed, rp, penalizedIds); break
       case 'points':                gameMap = computePoints(game, teams, data.pointsResults, fixed, rp); break
       case 'multi_participant':     gameMap = computeMultiParticipant(game, teams, data.participantResults, fixed, rp); break
       case 'tape': {
@@ -242,7 +254,6 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
       gameRankMap.set(sorted[i].id, gr)
     }
     const hasResults = gameMap.size > 0
-    const gamePenaltyMap = new Map((data.gamePenalties ?? []).filter(p => p.game_id === game.id).map(p => [p.team_id, p.reason]))
     for (const team of teams) {
       const penalized = gamePenaltyMap.has(team.id)
       const raw = gameMap.get(team.id) ?? 0
