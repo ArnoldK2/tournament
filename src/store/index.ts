@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import type {
   Client, TournamentEvent, Team, Edition, Game,
   StandardResult, PointsResult, ParticipantResult, ParticipantAttemptResult,
-  CumulativeRound, BracketMatch, User, GameParticipant, Organization,
+  CumulativeRound, BracketMatch, User, GameParticipant, Organization, GamePenalty,
 } from '../types'
 
 interface AppState {
@@ -21,6 +21,7 @@ interface AppState {
   bracketMatches: BracketMatch[]
   gameParticipants: GameParticipant[]
   users: User[]
+  gamePenalties: GamePenalty[]
 
   loaded: boolean
   loadData: () => Promise<void>
@@ -72,6 +73,9 @@ interface AppState {
   refreshEditionResults: (editionId: string) => Promise<void>
   clearEditionResults: (editionId: string) => Promise<void>
   logAudit: (action: string, gameId: string, gameName: string, details?: object) => Promise<void>
+
+  addPenalty: (gameId: string, teamId: string, reason?: string) => Promise<void>
+  removePenalty: (gameId: string, teamId: string) => Promise<void>
 }
 
 export type { AppState }
@@ -91,6 +95,7 @@ export const useStore = create<AppState>((set, get) => ({
   bracketMatches: [],
   gameParticipants: [],
   users: [],
+  gamePenalties: [],
 
   loaded: false,
 
@@ -110,6 +115,7 @@ export const useStore = create<AppState>((set, get) => ({
       { data: bracketMatches },
       { data: gameParticipants },
       { data: users },
+      { data: gamePenalties },
     ] = await Promise.all([
       supabase.from('organizations').select('*').order('name'),
       supabase.from('clients').select('*'),
@@ -125,6 +131,7 @@ export const useStore = create<AppState>((set, get) => ({
       supabase.from('bracket_matches').select('*'),
       supabase.from('game_participants').select('*').order('sort_order'),
       supabase.from('users').select('*'),
+      supabase.from('game_penalties').select('*'),
     ])
 
     set({
@@ -142,6 +149,7 @@ export const useStore = create<AppState>((set, get) => ({
       bracketMatches: (bracketMatches ?? []).map(r => ({ id: r.id, game_id: r.game_id, round: r.round, match_number: r.match_number, team_a_id: r.team_a_id, team_b_id: r.team_b_id, score_a: r.score_a, score_b: r.score_b, winner_id: r.winner_id, loser_bracket: r.loser_bracket })),
       gameParticipants: (gameParticipants ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, name: r.name, sort_order: r.sort_order })),
       users: (users ?? []).map(r => ({ id: r.id, organization_id: r.organization_id, username: r.username, pin: r.pin, role: r.role, display_name: r.display_name })),
+      gamePenalties: (gamePenalties ?? []).map(r => ({ id: r.id, game_id: r.game_id, team_id: r.team_id, reason: r.reason ?? undefined })),
       loaded: true,
       // Restore session from localStorage if present
       ...(() => {
@@ -472,5 +480,20 @@ export const useStore = create<AppState>((set, get) => ({
       game_name: gameName,
       details: details ?? null,
     })
+  },
+
+  addPenalty: async (gameId, teamId, reason) => {
+    const { data } = await supabase.from('game_penalties')
+      .upsert({ game_id: gameId, team_id: teamId, reason: reason ?? null }, { onConflict: 'game_id,team_id' })
+      .select().single()
+    if (data) set(s => ({
+      gamePenalties: [...s.gamePenalties.filter(p => !(p.game_id === gameId && p.team_id === teamId)),
+        { id: data.id, game_id: data.game_id, team_id: data.team_id, reason: data.reason ?? undefined }]
+    }))
+  },
+
+  removePenalty: async (gameId, teamId) => {
+    await supabase.from('game_penalties').delete().eq('game_id', gameId).eq('team_id', teamId)
+    set(s => ({ gamePenalties: s.gamePenalties.filter(p => !(p.game_id === gameId && p.team_id === teamId)) }))
   },
 }))

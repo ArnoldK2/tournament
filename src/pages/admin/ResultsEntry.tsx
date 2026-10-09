@@ -70,6 +70,64 @@ function PinConfirmModal({ onConfirm, onCancel }: { onConfirm: () => void; onCan
   )
 }
 
+// ── Penalties Section ─────────────────────────────────────────
+function PenaltiesSection({ game, teams }: { game: Game; teams: Team[] }) {
+  const gamePenalties = useStore(s => s.gamePenalties)
+  const addPenalty = useStore(s => s.addPenalty)
+  const removePenalty = useStore(s => s.removePenalty)
+  const [open, setOpen] = useState(false)
+  const [reasons, setReasons] = useState<Record<string, string>>({})
+
+  const penaltyMap = new Map(gamePenalties.filter(p => p.game_id === game.id).map(p => [p.team_id, p.reason ?? '']))
+
+  async function toggle(teamId: string) {
+    if (penaltyMap.has(teamId)) {
+      await removePenalty(game.id, teamId)
+    } else {
+      await addPenalty(game.id, teamId, reasons[teamId] || undefined)
+    }
+  }
+
+  return (
+    <div className="penalty-section">
+      <button className="penalty-toggle-btn" onClick={() => setOpen(o => !o)}>
+        ⚠ Rule Violations {penaltyMap.size > 0 && <span className="penalty-badge">{penaltyMap.size}</span>}
+        <span style={{ marginLeft: 'auto' }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="penalty-list">
+          {teams.map(t => {
+            const isPenalized = penaltyMap.has(t.id)
+            return (
+              <div key={t.id} className={`penalty-row ${isPenalized ? 'penalized' : ''}`}>
+                <span className="penalty-team-dot" style={{ background: t.color }} />
+                <span className="penalty-team-name">{t.name}</span>
+                {!isPenalized && (
+                  <input
+                    className="penalty-reason-input"
+                    placeholder="Reason (optional)"
+                    value={reasons[t.id] ?? ''}
+                    onChange={e => setReasons(r => ({ ...r, [t.id]: e.target.value }))}
+                  />
+                )}
+                {isPenalized && (
+                  <span className="penalty-reason-display">{penaltyMap.get(t.id) || 'Rule violation'}</span>
+                )}
+                <button
+                  className={`penalty-btn ${isPenalized ? 'remove' : 'add'}`}
+                  onClick={() => toggle(t.id)}
+                >
+                  {isPenalized ? '✕ Remove' : '+ Penalize'}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ResultsEntry({ game, eventId }: Props) {
   const allTeams = useStore(s => s.teams)
   const standardResults = useStore(s => s.standardResults)
@@ -203,122 +261,131 @@ export default function ResultsEntry({ game, eventId }: Props) {
       ? '1 = winner (e.g. 1st to finish)'
       : '1 = eliminated first (e.g. last standing wins)'
     return (
-      <div className="results-entry">
-        <p className="re-hint">{dirLabel}</p>
-        {teams.map(team => (
-          <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
-            <span className="re-dot" />
-            <span className="re-name">{team.name}</span>
-            <input className="re-input" type="number" inputMode="numeric" min={1} placeholder="Pos"
-              value={positions[team.id] ?? ''}
-              onChange={e => setPositions(p => ({ ...p, [team.id]: e.target.value }))} />
-          </div>
-        ))}
-        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
-          const results = teams.filter(t => positions[t.id]).map(t => ({ team_id: t.id, position: parseInt(positions[t.id]) }))
-          await saveStandardResults(game.id, results)
-          await updateGame(game.id, { status: 'completed' })
-          await logAudit('save_results', game.id, game.name, {
-            type: 'standard',
-            team_count: results.length,
-            entries: results
-              .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, position: r.position }))
-              .sort((a, b) => a.position - b.position),
-          })
-        })}>
-          {saved ? '✓ Saved' : 'Save Results'}
-        </button>
-        {errorBanner}
-        <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
-      </div>
+      <>
+        <div className="results-entry">
+          <p className="re-hint">{dirLabel}</p>
+          {teams.map(team => (
+            <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
+              <span className="re-dot" />
+              <span className="re-name">{team.name}</span>
+              <input className="re-input" type="number" inputMode="numeric" min={1} placeholder="Pos"
+                value={positions[team.id] ?? ''}
+                onChange={e => setPositions(p => ({ ...p, [team.id]: e.target.value }))} />
+            </div>
+          ))}
+          <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
+            const results = teams.filter(t => positions[t.id]).map(t => ({ team_id: t.id, position: parseInt(positions[t.id]) }))
+            await saveStandardResults(game.id, results)
+            await updateGame(game.id, { status: 'completed' })
+            await logAudit('save_results', game.id, game.name, {
+              type: 'standard',
+              team_count: results.length,
+              entries: results
+                .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, position: r.position }))
+                .sort((a, b) => a.position - b.position),
+            })
+          })}>
+            {saved ? '✓ Saved' : 'Save Results'}
+          </button>
+          {errorBanner}
+          <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
+        </div>
+        <PenaltiesSection game={game} teams={teams} />
+      </>
     )
   }
 
   // ── Points ────────────────────────────────────────────────
   if (game.type === 'points') {
     return (
-      <div className="results-entry">
-        <p className="re-hint">Enter points / counts scored by each team</p>
-        {teams.map(team => (
-          <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
-            <span className="re-dot" />
-            <span className="re-name">{team.name}</span>
-            <input className="re-input" type="number" inputMode="numeric" min={0} placeholder="Pts"
-              value={scores[team.id] ?? ''}
-              onChange={e => setScores(p => ({ ...p, [team.id]: e.target.value }))} />
-          </div>
-        ))}
-        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
-          const results = teams.filter(t => scores[t.id]).map(t => ({ team_id: t.id, raw_score: parseFloat(scores[t.id]) }))
-          await savePointsResults(game.id, results)
-          await updateGame(game.id, { status: 'completed' })
-          await logAudit('save_results', game.id, game.name, {
-            type: 'points',
-            team_count: results.length,
-            entries: results
-              .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, score: r.raw_score }))
-              .sort((a, b) => b.score - a.score),
-          })
-        })}>
-          {saved ? '✓ Saved' : 'Save Results'}
-        </button>
-        {errorBanner}
-        <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
-      </div>
+      <>
+        <div className="results-entry">
+          <p className="re-hint">Enter points / counts scored by each team</p>
+          {teams.map(team => (
+            <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
+              <span className="re-dot" />
+              <span className="re-name">{team.name}</span>
+              <input className="re-input" type="number" inputMode="numeric" min={0} placeholder="Pts"
+                value={scores[team.id] ?? ''}
+                onChange={e => setScores(p => ({ ...p, [team.id]: e.target.value }))} />
+            </div>
+          ))}
+          <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
+            const results = teams.filter(t => scores[t.id]).map(t => ({ team_id: t.id, raw_score: parseFloat(scores[t.id]) }))
+            await savePointsResults(game.id, results)
+            await updateGame(game.id, { status: 'completed' })
+            await logAudit('save_results', game.id, game.name, {
+              type: 'points',
+              team_count: results.length,
+              entries: results
+                .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, score: r.raw_score }))
+                .sort((a, b) => b.score - a.score),
+            })
+          })}>
+            {saved ? '✓ Saved' : 'Save Results'}
+          </button>
+          {errorBanner}
+          <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
+        </div>
+        <PenaltiesSection game={game} teams={teams} />
+      </>
     )
   }
 
   // ── Cumulative ────────────────────────────────────────────
   if (game.type === 'cumulative') {
     return (
-      <div className="results-entry">
-        {rounds.length > 0 && (
-          <div className="re-rounds-summary">
-            {rounds.map(r => (
-              <div key={r.id} className="re-round-row">
-                <span className="re-round-label">Round {r.round_number}</span>
-                <div className="re-round-scores">
-                  {r.scores.map(s => {
-                    const team = teams.find(t => t.id === s.team_id)
-                    return <span key={s.team_id} className="re-round-score" style={{ '--team-color': team?.color } as React.CSSProperties}>{team?.name}: {s.score}</span>
-                  })}
+      <>
+        <div className="results-entry">
+          {rounds.length > 0 && (
+            <div className="re-rounds-summary">
+              {rounds.map(r => (
+                <div key={r.id} className="re-round-row">
+                  <span className="re-round-label">Round {r.round_number}</span>
+                  <div className="re-round-scores">
+                    {r.scores.map(s => {
+                      const team = teams.find(t => t.id === s.team_id)
+                      return <span key={s.team_id} className="re-round-score" style={{ '--team-color': team?.color } as React.CSSProperties}>{team?.name}: {s.score}</span>
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-        <p className="re-hint">Add Round {rounds.length + 1}</p>
-        {teams.map(team => (
-          <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
-            <span className="re-dot" />
-            <span className="re-name">{team.name}</span>
-            <input className="re-input" type="number" inputMode="numeric" min={0} placeholder="Score"
-              value={roundScores[team.id] ?? ''}
-              onChange={e => setRoundScores(p => ({ ...p, [team.id]: e.target.value }))} />
-          </div>
-        ))}
-        <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
-          const results = teams.filter(t => roundScores[t.id]).map(t => ({ team_id: t.id, score: parseFloat(roundScores[t.id]) }))
-          await addCumulativeRound(game.id, results)
-          await logAudit('add_round', game.id, game.name, {
-            type: 'cumulative',
-            round: rounds.length + 1,
-            team_count: results.length,
-            entries: results
-              .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, score: r.score }))
-              .sort((a, b) => b.score - a.score),
-          })
-          setRoundScores(Object.fromEntries(teams.map(t => [t.id, ''])))
-        })}>
-          {saved ? '✓ Round Added' : `Add Round ${rounds.length + 1}`}
-        </button>
-        {errorBanner}
-        <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
-      </div>
+              ))}
+            </div>
+          )}
+          <p className="re-hint">Add Round {rounds.length + 1}</p>
+          {teams.map(team => (
+            <div key={team.id} className="re-row" style={{ '--team-color': team.color } as React.CSSProperties}>
+              <span className="re-dot" />
+              <span className="re-name">{team.name}</span>
+              <input className="re-input" type="number" inputMode="numeric" min={0} placeholder="Score"
+                value={roundScores[team.id] ?? ''}
+                onChange={e => setRoundScores(p => ({ ...p, [team.id]: e.target.value }))} />
+            </div>
+          ))}
+          <button className={`re-save ${saved ? 'saved' : ''}`} onClick={() => requestSave(async () => {
+            const results = teams.filter(t => roundScores[t.id]).map(t => ({ team_id: t.id, score: parseFloat(roundScores[t.id]) }))
+            await addCumulativeRound(game.id, results)
+            await logAudit('add_round', game.id, game.name, {
+              type: 'cumulative',
+              round: rounds.length + 1,
+              team_count: results.length,
+              entries: results
+                .map(r => ({ team: teams.find(t => t.id === r.team_id)?.name ?? r.team_id, score: r.score }))
+                .sort((a, b) => b.score - a.score),
+            })
+            setRoundScores(Object.fromEntries(teams.map(t => [t.id, ''])))
+          })}>
+            {saved ? '✓ Round Added' : `Add Round ${rounds.length + 1}`}
+          </button>
+          {errorBanner}
+          <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
+        </div>
+        <PenaltiesSection game={game} teams={teams} />
+      </>
     )
   }
 
-  if (game.type === 'tape') return <TapeEntry game={game} teams={teams} />
+  if (game.type === 'tape') return <><TapeEntry game={game} teams={teams} /><PenaltiesSection game={game} teams={teams} /></>
 
   // ── Multi-participant ─────────────────────────────────────
   if (game.type === 'multi_participant') {
@@ -326,6 +393,7 @@ export default function ResultsEntry({ game, eventId }: Props) {
       ? 'Lower position = better'
       : 'Higher position = better'
     return (
+      <>
       <div className="results-entry">
         <p className="re-hint">{dirLabel} · Enter each participant and their finishing position</p>
         {teams.map(team => (
@@ -374,6 +442,8 @@ export default function ResultsEntry({ game, eventId }: Props) {
         {errorBanner}
         <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
+      <PenaltiesSection game={game} teams={teams} />
+    </>
     )
   }
 
@@ -385,6 +455,7 @@ export default function ResultsEntry({ game, eventId }: Props) {
     })).sort((a, b) => b.total - a.total)
 
     return (
+      <>
       <div className="results-entry">
         <p className="re-hint">
           Tap each attempt — ✓ scored, ✗ missed · {numParticipants} participant{numParticipants > 1 ? 's' : ''} × {numAttempts} attempt{numAttempts > 1 ? 's' : ''}
@@ -471,16 +542,18 @@ export default function ResultsEntry({ game, eventId }: Props) {
         {errorBanner}
         <AnimatePresence>{showPin && <PinConfirmModal onConfirm={onPinConfirmed} onCancel={() => setShowPin(false)} />}</AnimatePresence>
       </div>
+      <PenaltiesSection game={game} teams={teams} />
+    </>
     )
   }
 
-  if (game.type === 'match_play') return <MatchPlayEntry game={game} teams={teams} />
-  if (game.type === 'completion') return <CompletionEntry game={game} teams={teams} />
-  if (game.type === 'tally') return <TallyEntry game={game} teams={teams} />
-  if (game.type === 'lives') return <LivesEntry game={game} teams={teams} />
-  if (game.type === 'head_to_head') return <HeadToHeadEntry game={game} teams={teams} />
+  if (game.type === 'match_play') return <><MatchPlayEntry game={game} teams={teams} /><PenaltiesSection game={game} teams={teams} /></>
+  if (game.type === 'completion') return <><CompletionEntry game={game} teams={teams} /><PenaltiesSection game={game} teams={teams} /></>
+  if (game.type === 'tally') return <><TallyEntry game={game} teams={teams} /><PenaltiesSection game={game} teams={teams} /></>
+  if (game.type === 'lives') return <><LivesEntry game={game} teams={teams} /><PenaltiesSection game={game} teams={teams} /></>
+  if (game.type === 'head_to_head') return <><HeadToHeadEntry game={game} teams={teams} /><PenaltiesSection game={game} teams={teams} /></>
 
-  return <BracketEntry game={game} teams={teams} />
+  return <><BracketEntry game={game} teams={teams} /><PenaltiesSection game={game} teams={teams} /></>
 }
 
 // ── Match Play Entry ──────────────────────────────────────────

@@ -74,17 +74,19 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
       {entry.game_scores.map(g => (
         <div key={g.game_id} className="lb-breakdown-row">
           <span className="lb-breakdown-name">{g.game_name}</span>
-          {g.score > 0
-            ? <>
-                <span className="lb-breakdown-rank">{ordinal(g.game_rank)}</span>
-                {g.base_score !== undefined && g.bonus_score !== undefined
-                  ? <span className="lb-breakdown-score">
-                      +{g.base_score} <span className="lb-breakdown-bonus">+{g.bonus_score} bonus</span>
-                    </span>
-                  : <span className="lb-breakdown-score">+{Math.round(g.score * 10) / 10}</span>
-                }
-              </>
-            : <span className="lb-breakdown-score lb-breakdown-pending">Results Pending</span>
+          {g.penalized
+            ? <span className="lb-breakdown-penalty">⚠ Rule violation{g.penalty_reason ? ` — ${g.penalty_reason}` : ''}</span>
+            : g.score > 0
+              ? <>
+                  <span className="lb-breakdown-rank">{ordinal(g.game_rank)}</span>
+                  {g.base_score !== undefined && g.bonus_score !== undefined
+                    ? <span className="lb-breakdown-score">
+                        +{g.base_score} <span className="lb-breakdown-bonus">+{g.bonus_score} bonus</span>
+                      </span>
+                    : <span className="lb-breakdown-score">+{Math.round(g.score * 10) / 10}</span>
+                  }
+                </>
+              : <span className="lb-breakdown-score lb-breakdown-pending">Results Pending</span>
           }
         </div>
       ))}
@@ -209,6 +211,7 @@ export default function Leaderboard() {
   const participantAttemptResults = useStore(s => s.participantAttemptResults)
   const cumulativeRounds = useStore(s => s.cumulativeRounds)
   const bracketMatches = useStore(s => s.bracketMatches)
+  const gamePenalties = useStore(s => s.gamePenalties)
   const refreshEditionResults = useStore(s => s.refreshEditionResults)
 
   const edition = useMemo(() => editions.find(e => e.id === editionId), [editions, editionId])
@@ -242,12 +245,12 @@ export default function Leaderboard() {
     const computed = computeLeaderboard({
       games, teams, edition,
       standardResults, pointsResults,
-      participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
+      participantResults, participantAttemptResults, cumulativeRounds, bracketMatches, gamePenalties,
     })
     const result = computed.map(e => ({ ...e, prev_rank: prevRef.current.get(e.team_id) }))
     prevRef.current = new Map(computed.map(e => [e.team_id, e.rank]))
     return result
-  }, [games, teams, edition, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches])
+  }, [games, teams, edition, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches, gamePenalties])
 
   // Realtime subscription — refresh when any result changes in Supabase.
   // editionId is the only dep so the channel is never torn down mid-session.

@@ -213,6 +213,7 @@
 .lb-breakdown-score { font-weight: 700; color: rgba(255,255,255,0.75); font-variant-numeric: tabular-nums; }
 .lb-breakdown-bonus { font-weight: 600; font-size: 0.78rem; color: rgba(0,0,0,0.5); margin-left: 0.35rem; }
 .lb-breakdown-pending { font-weight: 400 !important; font-size: 0.78rem; color: rgba(0,0,0,0.35) !important; font-style: italic; }
+.lb-breakdown-penalty { font-weight: 600; font-size: 0.78rem; color: #c0392b; }
 .lb-breakdown-empty { font-size: 0.78rem; color: rgba(255,255,255,0.25); margin: 0; }
 
 /* ── Back button ──────────────────────────────────────────── */

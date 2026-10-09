@@ -25,7 +25,7 @@ function lastResultTime(gameId: string, store: AppState): number {
   return ts.length ? Math.max(...ts) : Infinity
 }
 
-function buildFrames(editionId: string, store: AppState): Frame[] {
+function buildFrames(editionId: string, store: AppState, gamePenalties: import('../types').GamePenalty[]): Frame[] {
   const games = store.games
     .filter(g => g.edition_id === editionId && g.status === 'completed' && !g.is_fun)
     .sort((a, b) => {
@@ -57,6 +57,7 @@ function buildFrames(editionId: string, store: AppState): Frame[] {
       participantAttemptResults: store.participantAttemptResults,
       cumulativeRounds: store.cumulativeRounds,
       bracketMatches: store.bracketMatches,
+      gamePenalties,
     })
     frames.push({
       gameName: games[i].name,
@@ -77,10 +78,11 @@ export default function Progression() {
   const store = useStore(s => s)
   const currentRole = store.currentRole
 
-  const frames = useMemo(() => buildFrames(editionId!, store), [
+  const gamePenalties = useStore(s => s.gamePenalties)
+  const frames = useMemo(() => buildFrames(editionId!, store, gamePenalties), [
     editionId, store.games, store.standardResults, store.pointsResults,
     store.participantResults, store.participantAttemptResults, store.cumulativeRounds, store.bracketMatches,
-    store.teams, store.editions, store.events, store.clients,
+    store.teams, store.editions, store.events, store.clients, gamePenalties,
   ])
 
   const edition = store.editions.find(e => e.id === editionId)

@@ -171,6 +171,13 @@ export interface Feedback {
   created_at: string
 }
 
+export interface GamePenalty {
+  id: string
+  game_id: string
+  team_id: string
+  reason?: string
+}
+
 export interface LeaderboardEntry {
   team_id: string
   team_name: string
@@ -178,5 +185,5 @@ export interface LeaderboardEntry {
   total_score: number
   rank: number
   prev_rank?: number
-  game_scores: { game_id: string; game_name: string; score: number; game_rank: number; base_score?: number; bonus_score?: number }[]
+  game_scores: { game_id: string; game_name: string; score: number; game_rank: number; base_score?: number; bonus_score?: number; penalized?: boolean; penalty_reason?: string }[]
 }

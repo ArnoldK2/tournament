@@ -2,7 +2,7 @@ import type {
   Game, Team, LeaderboardEntry, Edition,
   StandardResult, PointsResult, ParticipantResult,
   ParticipantAttemptResult, CumulativeRound, BracketMatch,
-  ScoringSystem,
+  ScoringSystem, GamePenalty,
 } from '../types'
 
 // F1 points for positions 1–10; beyond 10 gets 1pt
@@ -25,6 +25,7 @@ interface ScoringData {
   participantAttemptResults: ParticipantAttemptResult[]
   cumulativeRounds: CumulativeRound[]
   bracketMatches: BracketMatch[]
+  gamePenalties?: GamePenalty[]
 }
 
 function rankPoints(rank: number, total: number, weight: number, fixed: boolean, system: ScoringSystem, gap: number) {
@@ -185,7 +186,7 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
   const { games } = data
   const teams = data.teams.filter(t => !t.is_fun)
   const scorableGames = games.filter(g => g.status !== 'pending' && !g.is_fun)
-  const teamScores = new Map<string, { game_id: string; game_name: string; score: number; game_rank: number; base_score?: number; bonus_score?: number }[]>()
+  const teamScores = new Map<string, { game_id: string; game_name: string; score: number; game_rank: number; base_score?: number; bonus_score?: number; penalized?: boolean; penalty_reason?: string }[]>()
   for (const team of teams) teamScores.set(team.id, [])
 
   const rp: RP = {
@@ -241,12 +242,20 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
       gameRankMap.set(sorted[i].id, gr)
     }
     const hasResults = gameMap.size > 0
+    const gamePenaltyMap = new Map((data.gamePenalties ?? []).filter(p => p.game_id === game.id).map(p => [p.team_id, p.reason]))
     for (const team of teams) {
+      const penalized = gamePenaltyMap.has(team.id)
       const raw = gameMap.get(team.id) ?? 0
-      const score = hasResults ? Math.max(1, raw) : 0
-      const bonus_score = bonusMap?.get(team.id)
+      const score = penalized ? 1 : (hasResults ? Math.max(1, raw) : 0)
+      const bonus_score = penalized ? undefined : bonusMap?.get(team.id)
       const base_score = bonus_score !== undefined ? score - bonus_score : undefined
-      teamScores.get(team.id)!.push({ game_id: game.id, game_name: game.name, score, game_rank: gameRankMap.get(team.id) ?? 0, base_score, bonus_score })
+      teamScores.get(team.id)!.push({
+        game_id: game.id, game_name: game.name, score,
+        game_rank: gameRankMap.get(team.id) ?? 0,
+        base_score, bonus_score,
+        penalized: penalized || undefined,
+        penalty_reason: penalized ? (gamePenaltyMap.get(team.id) ?? undefined) : undefined,
+      })
     }
   }
 
