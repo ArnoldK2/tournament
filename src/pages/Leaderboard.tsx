@@ -187,7 +187,7 @@ function BigScreenLeaderboard({
         <div className="bs-qr">
           <QRCodeSVG
             value={`${window.location.origin}/register/${editionId}`}
-            size={180}
+            size={240}
             bgColor="transparent"
             fgColor="currentColor"
           />
