@@ -84,7 +84,7 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
                   : <span className="lb-breakdown-score">+{Math.round(g.score * 10) / 10}</span>
                 }
               </>
-            : <span className="lb-breakdown-score">—</span>
+            : <span className="lb-breakdown-score lb-breakdown-pending">Results Pending</span>
           }
         </div>
       ))}
