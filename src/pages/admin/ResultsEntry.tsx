@@ -70,6 +70,36 @@ function PinConfirmModal({ onConfirm, onCancel }: { onConfirm: () => void; onCan
   )
 }
 
+// ── Penalize Row (with confirmation feedback) ─────────────────
+function PenalizeRow({ team, onPenalize }: { team: Team; onPenalize: () => Promise<void> }) {
+  const [state, setState] = useState<'idle' | 'confirm' | 'saving'>('idle')
+
+  if (state === 'confirm') {
+    return (
+      <div className="penalty-row penalty-confirm">
+        <span className="penalty-team-dot" style={{ background: team.color }} />
+        <span className="penalty-team-name">{team.name}</span>
+        <span className="penalty-confirm-note">will receive 1 pt — confirm?</span>
+        <button className="penalty-btn add" onClick={async () => {
+          setState('saving')
+          await onPenalize()
+        }}>
+          {state === 'saving' ? '…' : 'Yes, penalize'}
+        </button>
+        <button className="penalty-btn remove" onClick={() => setState('idle')}>Cancel</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="penalty-row">
+      <span className="penalty-team-dot" style={{ background: team.color }} />
+      <span className="penalty-team-name">{team.name}</span>
+      <button className="penalty-btn add" onClick={() => setState('confirm')}>+ Penalize</button>
+    </div>
+  )
+}
+
 // ── Penalties Section ─────────────────────────────────────────
 function PenaltiesSection({ game, teams }: { game: Game; teams: Team[] }) {
   const gamePenalties = useStore(s => s.gamePenalties)
@@ -124,11 +154,7 @@ function PenaltiesSection({ game, teams }: { game: Game; teams: Team[] }) {
             </div>
           ))}
           {cleanTeams.map(t => (
-            <div key={t.id} className="penalty-row">
-              <span className="penalty-team-dot" style={{ background: t.color }} />
-              <span className="penalty-team-name">{t.name}</span>
-              <button className="penalty-btn add" onClick={() => addPenalty(game.id, t.id)}>+ Penalize</button>
-            </div>
+            <PenalizeRow key={t.id} team={t} onPenalize={() => addPenalty(game.id, t.id)} />
           ))}
         </div>
       )}
