@@ -185,5 +185,5 @@ export interface LeaderboardEntry {
   total_score: number
   rank: number
   prev_rank?: number
-  game_scores: { game_id: string; game_name: string; score: number; game_rank: number; base_score?: number; bonus_score?: number; penalized?: boolean; penalty_reason?: string }[]
+  game_scores: { game_id: string; game_name: string; score: number; game_rank: number; base_score?: number; bonus_score?: number; penalized?: boolean; penalty_reason?: string; weight?: number }[]
 }

@@ -255,6 +255,7 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
         base_score, bonus_score,
         penalized: penalized || undefined,
         penalty_reason: penalized ? (gamePenaltyMap.get(team.id) ?? undefined) : undefined,
+        weight: game.weight !== 1 ? game.weight : undefined,
       })
     }
   }

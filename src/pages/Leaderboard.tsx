@@ -23,8 +23,9 @@ function ScoreCounter({ value, big = false }: { value: number; big?: boolean }) 
   const spring = useSpring(motionVal, { stiffness: 80, damping: 20 })
   const [display, setDisplay] = useState(value)
   useEffect(() => { motionVal.set(value) }, [value, motionVal])
-  useEffect(() => spring.on('change', v => setDisplay(Math.round(v))), [spring])
-  return <span className={big ? 'score score-big' : 'score'}>{display} pts</span>
+  useEffect(() => spring.on('change', v => setDisplay(Math.round(v * 10) / 10)), [spring])
+  const fmt = (n: number) => n % 1 === 0 ? `${n}` : n.toFixed(1)
+  return <span className={big ? 'score score-big' : 'score'}>{fmt(display)} pts</span>
 }
 
 function RankDelta({ curr, prev }: { curr: number; prev?: number }) {
@@ -73,7 +74,10 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
     <div className="lb-breakdown">
       {entry.game_scores.map(g => (
         <div key={g.game_id} className="lb-breakdown-row">
-          <span className="lb-breakdown-name">{g.game_name}</span>
+          <span className="lb-breakdown-name">
+            {g.game_name}
+            {g.weight !== undefined && <span className="lb-breakdown-weight">×{g.weight}</span>}
+          </span>
           {g.penalized
             ? <span className="lb-breakdown-penalty">⚠ Rule violation{g.penalty_reason ? ` — ${g.penalty_reason}` : ''} <span className="lb-breakdown-score" style={{marginLeft:'0.4rem'}}>+1</span></span>
             : g.score > 0
@@ -83,7 +87,9 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
                     ? <span className="lb-breakdown-score">
                         +{g.base_score} <span className="lb-breakdown-bonus">+{g.bonus_score} bonus</span>
                       </span>
-                    : <span className="lb-breakdown-score">+{Math.round(g.score * 10) / 10}</span>
+                    : <span className="lb-breakdown-score">
+                        +{g.score % 1 === 0 ? g.score : g.score.toFixed(1)}
+                      </span>
                   }
                 </>
               : <span className="lb-breakdown-score lb-breakdown-pending">Results Pending</span>
