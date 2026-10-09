@@ -192,7 +192,6 @@ export function computeLeaderboard(data: ScoringData): LeaderboardEntry[] {
     system: data.edition?.scoring_system ?? 'classic',
     gap: data.edition?.scoring_gap ?? 5,
   }
-  console.log('[scoring] edition:', data.edition?.id, 'scoring_system:', data.edition?.scoring_system, 'scoring_gap:', data.edition?.scoring_gap, '→ rp:', rp)
 
   for (const game of scorableGames) {
     const fixed = game.scoring_mode === 'fixed'
