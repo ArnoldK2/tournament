@@ -75,7 +75,7 @@ function GameBreakdown({ entry }: { entry: LeaderboardEntry }) {
         <div key={g.game_id} className="lb-breakdown-row">
           <span className="lb-breakdown-name">{g.game_name}</span>
           {g.penalized
-            ? <span className="lb-breakdown-penalty">⚠ Rule violation{g.penalty_reason ? ` — ${g.penalty_reason}` : ''}</span>
+            ? <span className="lb-breakdown-penalty">⚠ Rule violation{g.penalty_reason ? ` — ${g.penalty_reason}` : ''} <span className="lb-breakdown-score" style={{marginLeft:'0.4rem'}}>+1</span></span>
             : g.score > 0
               ? <>
                   <span className="lb-breakdown-rank">{ordinal(g.game_rank)}</span>
@@ -213,6 +213,7 @@ export default function Leaderboard() {
   const bracketMatches = useStore(s => s.bracketMatches)
   const gamePenalties = useStore(s => s.gamePenalties)
   const refreshEditionResults = useStore(s => s.refreshEditionResults)
+  const loadData = useStore(s => s.loadData)
 
   const edition = useMemo(() => editions.find(e => e.id === editionId), [editions, editionId])
   const event = useMemo(() => events.find(e => e.id === edition?.event_id), [events, edition])
@@ -286,6 +287,7 @@ export default function Leaderboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cumulative_rounds' }, handleResultChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bracket_matches' }, handleResultChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_attempt_results' }, handleResultChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'game_penalties' }, () => loadData())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [editionId])
