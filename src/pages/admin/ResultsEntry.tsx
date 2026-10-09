@@ -76,17 +76,12 @@ function PenaltiesSection({ game, teams }: { game: Game; teams: Team[] }) {
   const addPenalty = useStore(s => s.addPenalty)
   const removePenalty = useStore(s => s.removePenalty)
   const [open, setOpen] = useState(false)
-  const [reasons, setReasons] = useState<Record<string, string>>({})
+  const [editingReason, setEditingReason] = useState<string | null>(null)
+  const [reasonDraft, setReasonDraft] = useState('')
 
   const penaltyMap = new Map(gamePenalties.filter(p => p.game_id === game.id).map(p => [p.team_id, p.reason ?? '']))
-
-  async function toggle(teamId: string) {
-    if (penaltyMap.has(teamId)) {
-      await removePenalty(game.id, teamId)
-    } else {
-      await addPenalty(game.id, teamId, reasons[teamId] || undefined)
-    }
-  }
+  const penalizedTeams = teams.filter(t => penaltyMap.has(t.id))
+  const cleanTeams = teams.filter(t => !penaltyMap.has(t.id))
 
   return (
     <div className="penalty-section">
@@ -96,32 +91,45 @@ function PenaltiesSection({ game, teams }: { game: Game; teams: Team[] }) {
       </button>
       {open && (
         <div className="penalty-list">
-          {teams.map(t => {
-            const isPenalized = penaltyMap.has(t.id)
-            return (
-              <div key={t.id} className={`penalty-row ${isPenalized ? 'penalized' : ''}`}>
-                <span className="penalty-team-dot" style={{ background: t.color }} />
-                <span className="penalty-team-name">{t.name}</span>
-                {!isPenalized && (
-                  <input
+          {penalizedTeams.map(t => (
+            <div key={t.id} className="penalty-row penalized">
+              <span className="penalty-team-dot" style={{ background: t.color }} />
+              <span className="penalty-team-name">{t.name}</span>
+              {editingReason === t.id
+                ? <input
+                    autoFocus
                     className="penalty-reason-input"
                     placeholder="Reason (optional)"
-                    value={reasons[t.id] ?? ''}
-                    onChange={e => setReasons(r => ({ ...r, [t.id]: e.target.value }))}
+                    value={reasonDraft}
+                    onChange={e => setReasonDraft(e.target.value)}
+                    onBlur={async () => {
+                      await addPenalty(game.id, t.id, reasonDraft || undefined)
+                      setEditingReason(null)
+                    }}
+                    onKeyDown={async e => {
+                      if (e.key === 'Enter') {
+                        await addPenalty(game.id, t.id, reasonDraft || undefined)
+                        setEditingReason(null)
+                      }
+                    }}
                   />
-                )}
-                {isPenalized && (
-                  <span className="penalty-reason-display">{penaltyMap.get(t.id) || 'Rule violation'}</span>
-                )}
-                <button
-                  className={`penalty-btn ${isPenalized ? 'remove' : 'add'}`}
-                  onClick={() => toggle(t.id)}
-                >
-                  {isPenalized ? '✕ Remove' : '+ Penalize'}
-                </button>
-              </div>
-            )
-          })}
+                : <span
+                    className="penalty-reason-display"
+                    onClick={() => { setEditingReason(t.id); setReasonDraft(penaltyMap.get(t.id) ?? '') }}
+                  >
+                    {penaltyMap.get(t.id) || <em>add reason…</em>}
+                  </span>
+              }
+              <button className="penalty-btn remove" onClick={() => removePenalty(game.id, t.id)}>✕</button>
+            </div>
+          ))}
+          {cleanTeams.map(t => (
+            <div key={t.id} className="penalty-row">
+              <span className="penalty-team-dot" style={{ background: t.color }} />
+              <span className="penalty-team-name">{t.name}</span>
+              <button className="penalty-btn add" onClick={() => addPenalty(game.id, t.id)}>+ Penalize</button>
+            </div>
+          ))}
         </div>
       )}
     </div>
