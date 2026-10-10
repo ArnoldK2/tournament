@@ -109,25 +109,25 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
     const funLabel = game.is_fun ? ' [FUN]' : ''
     const weightLabel = game.weight !== 1 ? ` · ×${game.weight}` : ''
     grRows.push([`${game.name}${funLabel}`, `Type: ${game.type}`, `Status: ${game.status}${weightLabel}`])
-    grRows.push(['Rank', 'Team', 'Points', 'Notes'])
+    grRows.push(['Rank', 'Team', 'Points', 'Base', 'Bonus', 'Notes'])
 
     const teamPoints = d.leaderboard
       .map(e => {
         const gs = e.game_scores.find(s => s.game_id === game.id)
-        return gs ? { team: e.team_name, score: gs.score, rank: gs.game_rank, penalized: gs.penalized, reason: gs.penalty_reason } : null
+        return gs ? { team: e.team_name, score: gs.score, rank: gs.game_rank, base_score: gs.base_score, bonus_score: gs.bonus_score, penalized: gs.penalized, reason: gs.penalty_reason } : null
       })
       .filter(Boolean)
       .sort((a, b) => a!.rank - b!.rank)
 
     for (const row of teamPoints) {
       const notes = row!.penalized ? `PENALTY${row!.reason ? `: ${row!.reason}` : ''}` : ''
-      grRows.push([row!.rank, row!.team, row!.score, notes])
+      grRows.push([row!.rank, row!.team, row!.score, row!.base_score ?? '', row!.bonus_score ?? '', notes])
     }
 
     grRows.push([])
   }
   const grSheet = XLSX.utils.aoa_to_sheet(grRows)
-  grSheet['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 10 }, { wch: 36 }]
+  grSheet['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 36 }]
   XLSX.utils.book_append_sheet(wb, grSheet, 'Game Results')
 
   // ── 4. Game Participants ─────────────────────────────
