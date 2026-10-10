@@ -5,7 +5,7 @@ import type {
   Client, TournamentEvent, Edition, Team, Game,
   StandardResult, PointsResult, ParticipantResult, ParticipantAttemptResult,
   CumulativeRound, BracketMatch, AudienceRegistration, Feedback,
-  LeaderboardEntry, GameParticipant,
+  LeaderboardEntry, GameParticipant, GamePenalty,
 } from '../types'
 
 interface ExportData {
@@ -32,11 +32,13 @@ async function fetchExportData(
   standardResults: StandardResult[], pointsResults: PointsResult[],
   participantResults: ParticipantResult[], participantAttemptResults: ParticipantAttemptResult[],
   cumulativeRounds: CumulativeRound[], bracketMatches: BracketMatch[],
+  gamePenalties: GamePenalty[],
 ): Promise<ExportData> {
   const leaderboard = computeLeaderboard({
-    games, teams,
+    games, teams, edition,
     standardResults, pointsResults,
     participantResults, participantAttemptResults, cumulativeRounds, bracketMatches,
+    gamePenalties,
   })
 
   const gameIds = games.map(g => g.id)
@@ -105,50 +107,27 @@ function buildWorkbook(d: ExportData): XLSX.WorkBook {
   const grRows: (string | number)[][] = []
   for (const game of d.games.sort((a, b) => a.order - b.order)) {
     const funLabel = game.is_fun ? ' [FUN]' : ''
-    grRows.push([`${game.name}${funLabel}`, `Type: ${game.type}`, `Status: ${game.status}`, `Weight: ${game.weight}`])
+    const weightLabel = game.weight !== 1 ? ` · ×${game.weight}` : ''
+    grRows.push([`${game.name}${funLabel}`, `Type: ${game.type}`, `Status: ${game.status}${weightLabel}`])
+    grRows.push(['Rank', 'Team', 'Points', 'Notes'])
 
-    if (game.type === 'standard') {
-      grRows.push(['Team', 'Position'])
-      d.standardResults
-        .filter(r => r.game_id === game.id)
-        .sort((a, b) => a.position - b.position)
-        .forEach(r => grRows.push([teamName(r.team_id), r.position]))
-    } else if (game.type === 'points') {
-      grRows.push(['Team', 'Score'])
-      d.pointsResults
-        .filter(r => r.game_id === game.id)
-        .sort((a, b) => b.raw_score - a.raw_score)
-        .forEach(r => grRows.push([teamName(r.team_id), r.raw_score]))
-    } else if (game.type === 'multi_participant') {
-      grRows.push(['Team', 'Participant', 'Position'])
-      d.participantResults
-        .filter(r => r.game_id === game.id)
-        .sort((a, b) => a.position - b.position)
-        .forEach(r => grRows.push([teamName(r.team_id), r.participant_name || '(unnamed)', r.position]))
-    } else if (game.type === 'participant_attempts') {
-      grRows.push(['Team', 'Participant', 'Attempt', 'Result'])
-      d.participantAttemptResults
-        .filter(r => r.game_id === game.id)
-        .sort((a, b) => teamName(a.team_id).localeCompare(teamName(b.team_id)) || a.attempt_number - b.attempt_number)
-        .forEach(r => grRows.push([teamName(r.team_id), r.participant_name || '(unnamed)', r.attempt_number, r.success ? 'Hit' : 'Miss']))
-    } else if (game.type === 'cumulative') {
-      const rounds = d.cumulativeRounds.filter(r => r.game_id === game.id).sort((a, b) => a.round_number - b.round_number)
-      const gameTeams = d.teams.filter(t => !!t.is_fun === !!game.is_fun)
-      grRows.push(['Round', ...gameTeams.map(t => t.name)])
-      for (const round of rounds) {
-        const row: (string | number)[] = [`Round ${round.round_number}`]
-        for (const team of gameTeams) {
-          const s = round.scores.find((sc: { team_id: string; score: number }) => sc.team_id === team.id)
-          row.push(s ? s.score : 0)
-        }
-        grRows.push(row)
-      }
+    const teamPoints = d.leaderboard
+      .map(e => {
+        const gs = e.game_scores.find(s => s.game_id === game.id)
+        return gs ? { team: e.team_name, score: gs.score, rank: gs.game_rank, penalized: gs.penalized, reason: gs.penalty_reason } : null
+      })
+      .filter(Boolean)
+      .sort((a, b) => a!.rank - b!.rank)
+
+    for (const row of teamPoints) {
+      const notes = row!.penalized ? `PENALTY${row!.reason ? `: ${row!.reason}` : ''}` : ''
+      grRows.push([row!.rank, row!.team, row!.score, notes])
     }
 
     grRows.push([])
   }
   const grSheet = XLSX.utils.aoa_to_sheet(grRows)
-  grSheet['!cols'] = [{ wch: 28 }, { wch: 22 }, { wch: 14 }, { wch: 14 }]
+  grSheet['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 10 }, { wch: 36 }]
   XLSX.utils.book_append_sheet(wb, grSheet, 'Game Results')
 
   // ── 4. Game Participants ─────────────────────────────
@@ -236,11 +215,12 @@ export async function exportEventData(
   standardResults: StandardResult[], pointsResults: PointsResult[],
   participantResults: ParticipantResult[], participantAttemptResults: ParticipantAttemptResult[],
   cumulativeRounds: CumulativeRound[], bracketMatches: BracketMatch[],
+  gamePenalties: GamePenalty[] = [],
 ) {
   const data = await fetchExportData(
     client, event, edition, teams, games,
     standardResults, pointsResults, participantResults, participantAttemptResults,
-    cumulativeRounds, bracketMatches,
+    cumulativeRounds, bracketMatches, gamePenalties,
   )
   const wb = buildWorkbook(data)
   const filename = `${client.name} - ${event.name} - ${edition.label} (${edition.date}).xlsx`.replace(/[/\\?%*:|"<>]/g, '-')

@@ -361,7 +361,7 @@ export default function Leaderboard() {
         role={currentRole}
         newTab
         onExport={currentRole !== 'guest' ? async () => {
-          await exportEventData(client, event, edition, teams, games, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches)
+          await exportEventData(client, event, edition, teams, games, standardResults, pointsResults, participantResults, participantAttemptResults, cumulativeRounds, bracketMatches, gamePenalties)
         } : undefined}
       />
 
